@@ -5,3 +5,7 @@ version = 4
 [[package]]
 name = "sable-lang"
 version = "0.1.0"
+
+[[package]]
+name = "sable_parser"
+version = "0.1.0"
