@@ -21,13 +21,13 @@ use super::error::{
 pub type PRes<'s, T> = Result<T, ParserError<'s>>;
 
 pub struct Parser<'s> {
-  lexer: RefCell<Lexer<'s>>,
+  lexer: RefCell<&'s mut Lexer<'s>>,
   ast: Rc<AST>,
   errs: Vec<ParserError<'s>>,
 }
 
 impl<'s> Parser<'s> {
-  pub fn new(lexer: Lexer<'s>) -> Self {
+  pub fn new(lexer: &'s mut Lexer<'s>) -> Parser<'s> {
     Parser {
       lexer: RefCell::new(lexer),
       ast: Rc::new(AST::new()),
@@ -84,8 +84,8 @@ mod tests {
   #[test]
   fn test_parser() {
     let source = "abc";
-    let lexer = Lexer::new(source);
-    let parser = Parser::new(lexer);
+    let mut lexer = Lexer::new(source);
+    let parser = Parser::new(&mut lexer);
 
     let token = parser.lexer.borrow_mut().lex();
     assert_eq!(token.token_type, TokenType::Identifier);
@@ -95,8 +95,8 @@ mod tests {
   #[test]
   fn test_err_or_ast() {
     let source = "abc";
-    let lexer = Lexer::new(source);
-    let mut parser = Parser::new(lexer);
+    let mut lexer = Lexer::new(source);
+    let mut parser = Parser::new(&mut lexer);
 
     let result = parser.parse();
     assert!(result.is_ok());
