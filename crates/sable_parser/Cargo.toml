@@ -8,3 +8,5 @@ crate-type = ["rlib"]
 
 [dependencies]
 phf = { workspace = true, features = ["macros"] }
+smallvec = { workspace = true }
+ariadne = { workspace = true }

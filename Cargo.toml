@@ -9,6 +9,8 @@ resolver = "3"
 
 [workspace.dependencies]
 phf = "0.11.3"
+ariadne = "0.5.1"
+smallvec = "1.15.0"
 
 [dependencies]
 sable_parser = { path = "crates/sable_parser" }
