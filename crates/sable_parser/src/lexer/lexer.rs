@@ -132,6 +132,12 @@ impl<'s> Lexer<'s> {
             '\0' => self.get_token(TokenType::Eof),
             'a'..='z' | 'A'..='Z' | '_' => self.lex_identifier(),
             '0'..='9' => self.lex_number(),
+            '(' => self.get_token(TokenType::Paren(true)),
+            ')' => self.get_token(TokenType::Paren(false)),
+            '{' => self.get_token(TokenType::Brace(true)),
+            '}' => self.get_token(TokenType::Brace(false)),
+            ':' => self.get_token(TokenType::Colon),
+            ',' => self.get_token(TokenType::Comma),
             _ => return self.get_token(TokenType::Err),
         }
     }
@@ -191,5 +197,35 @@ mod tests {
         let token = lexer.lex();
         assert_eq!(token.token_type, TokenType::Type);
         assert_eq!(token.lexeme, "f32");
+    }
+
+    #[test]
+    fn lex_symbols() {
+        let source = "({:},)";
+        let mut lexer = Lexer::new(source);
+
+        let token = lexer.lex();
+        assert_eq!(token.token_type, TokenType::Paren(true));
+        assert_eq!(token.lexeme, "(");
+
+        let token = lexer.lex();
+        assert_eq!(token.token_type, TokenType::Brace(true));
+        assert_eq!(token.lexeme, "{");
+
+        let token = lexer.lex();
+        assert_eq!(token.token_type, TokenType::Colon);
+        assert_eq!(token.lexeme, ":");
+
+        let token = lexer.lex();
+        assert_eq!(token.token_type, TokenType::Brace(false));
+        assert_eq!(token.lexeme, "}");
+
+        let token = lexer.lex();
+        assert_eq!(token.token_type, TokenType::Comma);
+        assert_eq!(token.lexeme, ",");
+
+        let token = lexer.lex();
+        assert_eq!(token.token_type, TokenType::Paren(false));
+        assert_eq!(token.lexeme, ")");
     }
 }

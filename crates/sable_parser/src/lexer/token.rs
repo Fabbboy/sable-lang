@@ -2,13 +2,24 @@ use crate::position::Position;
 
 #[derive(Debug, Clone, PartialEq, Default)]
 pub enum TokenType {
+    // Special
     #[default]
     Eof,
     Err,
+    
+    // Literal
     Identifier,
     Integer,
     Float,
+
+    // Keywords
     Type,
+
+    // Symbols
+    Paren(bool),
+    Brace(bool),
+    Colon,
+    Comma,
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
