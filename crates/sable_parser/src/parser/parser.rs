@@ -22,13 +22,6 @@ impl<'p, 's> Parser<'p, 's> {
   }
 
   pub fn parse(&mut self) -> Result<Rc<AST>, &Vec<ParserError<'s>>> {
-    self
-      .errs
-      .push(ParserError::UnexpectedToken(UnexpectedTokenError::new(
-        smallvec![],
-        self.lexer.lex(),
-      )));
-
     if !self.errs.is_empty() {
       return Err(&self.errs);
     }
