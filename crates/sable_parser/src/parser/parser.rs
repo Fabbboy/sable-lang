@@ -1,9 +1,12 @@
-use std::rc::Rc;
+use std::{
+  cell::{Ref, RefCell},
+  rc::Rc,
+};
 
 use smallvec::{SmallVec, smallvec};
 
 use crate::{
-  ast::ast::AST,
+  ast::{ast::AST, function::Function},
   lexer::{
     lexer::Lexer,
     token::{Token, TokenType},
@@ -15,11 +18,25 @@ use super::error::{
   unexpected_token::{MAX_EXPECTED, UnexpectedTokenError},
 };
 
-pub type PRes<'s, T> = Result<T, ParserError<'s>>;
+macro_rules! next {
+  (@plain $self:expr, [$($expected:expr),+]) => {{
+    match $self.next(smallvec![$($expected),+]) {
+      Ok(tok) => tok,
+      Err(err) => return Err(err),
+    }
+  }};
+
+  (@vec $self:expr, [$($expected:expr),+]) => {{
+    match $self.next(smallvec![$($expected),+]) {
+      Ok(tok) => tok,
+      Err(err) => return Err(smallvec![err]),
+    }
+  }};
+}
 
 pub struct Parser<'s> {
   lexer: &'s mut Lexer<'s>,
-  ast: Rc<AST>,
+  ast: Rc<RefCell<AST<'s>>>,
   errs: Vec<ParserError<'s>>,
 }
 
@@ -27,12 +44,15 @@ impl<'s> Parser<'s> {
   pub fn new(lexer: &'s mut Lexer<'s>) -> Parser<'s> {
     Parser {
       lexer,
-      ast: Rc::new(AST::new()),
+      ast: Rc::new(RefCell::new(AST::new())),
       errs: Vec::new(),
     }
   }
 
-  fn next(&mut self, expected: SmallVec<[TokenType; MAX_EXPECTED]>) -> Result<Token<'s>, ParserError<'s>> {
+  fn next(
+    &mut self,
+    expected: SmallVec<[TokenType; MAX_EXPECTED]>,
+  ) -> Result<Token<'s>, ParserError<'s>> {
     let token = self.lexer.lex();
     if token.token_type == TokenType::Err {
       let err = UnexpectedTokenError::new(expected, token);
@@ -49,19 +69,57 @@ impl<'s> Parser<'s> {
     Err(ParserError::UnexpectedToken(err))
   }
 
-  pub fn parse(&mut self) -> Result<Rc<AST>, &[ParserError<'s>]> {
+  fn sync(&mut self, expected: SmallVec<[TokenType; MAX_EXPECTED]>) {
+    loop {
+      let token = self.lexer.peek();
+      if token.token_type == TokenType::Eof {
+        break;
+      }
+      if expected.iter().any(|t| *t == token.token_type) {
+        break;
+      }
+      self.lexer.lex();
+    }
+  }
+
+  fn parse_function(&mut self) -> Result<Function<'s>, SmallVec<[ParserError<'s>; MAX_EXPECTED]>> {
+    let type_ = next!(@vec self, [TokenType::Type]);
+    let mut ty_pos = type_.pos;
+    let name = next!(@vec self, [TokenType::Identifier]);
+    next!(@vec self, [TokenType::Paren(true)]);
+    next!(@vec self, [TokenType::Paren(false)]);
+    next!(@vec self, [TokenType::Brace(true)]);
+    next!(@vec self, [TokenType::Brace(false)]);
+
+    ty_pos.range.end = name.pos.range.end;
+    Ok(Function::new(name.lexeme, ty_pos))
+  }
+
+  pub fn parse(&mut self) -> Result<Ref<AST>, &[ParserError<'s>]> {
     loop {
       let tok = self.next(smallvec![TokenType::Func, TokenType::Eof]);
-      match tok {
-        Err(err) => {
-          self.errs.push(err);
-          break;
+      if tok.is_err() {
+        self.errs.push(tok.unwrap_err());
+        self.sync(smallvec![TokenType::Func, TokenType::Eof]);
+        continue;
+      }
+      let tok = tok.unwrap();
+
+      match tok.token_type {
+        TokenType::Func => {
+          let res = self.parse_function();
+          match res {
+            Ok(f) => self.ast.borrow_mut().add_func(f),
+            Err(errs) => {
+              self.sync(smallvec![TokenType::Func, TokenType::Eof]);
+              for e in errs.iter() {
+                self.errs.push(e.clone())
+              }
+            }
+          }
         }
-        Ok(token) => match token.token_type {
-          TokenType::Func => {}
-          TokenType::Eof => break,
-          _ => unreachable!(),
-        },
+        TokenType::Eof => break,
+        _ => unreachable!(),
       }
     }
 
@@ -69,7 +127,7 @@ impl<'s> Parser<'s> {
       return Err(&self.errs);
     }
 
-    Ok(self.ast.clone())
+    Ok(self.ast.borrow())
   }
 }
 

@@ -2,7 +2,7 @@ use ariadne::Source;
 use sable_parser::{lexer::lexer::Lexer, parser::parser::Parser};
 
 const SOURCE: &str = r#"
-
+func i32 main () {}
 "#;
 const FILENAME: &str = "test.sbl";
 

@@ -156,6 +156,10 @@ impl<'s> Lexer<'s> {
     self.next_tok = self.next();
     self.curr_tok.clone()
   }
+
+  pub fn peek(&self) -> Token<'s> {
+    self.next_tok.clone()
+  }
 }
 
 #[cfg(test)]
