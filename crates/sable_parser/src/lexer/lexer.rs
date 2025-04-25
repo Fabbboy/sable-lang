@@ -1,6 +1,13 @@
+use phf::phf_map;
+
 use crate::position::{Position, Range};
 
 use super::token::{Token, TokenType};
+
+const KEYWORDS: phf::Map<&'static str, TokenType> = phf_map! {
+    "i32" => TokenType::Type,
+    "f32" => TokenType::Type,
+};
 
 pub struct Lexer<'s> {
     source: &'s str,
@@ -71,6 +78,46 @@ impl<'s> Lexer<'s> {
         }
     }
 
+    fn lex_identifier(&mut self) -> Token<'s> {
+        while let Some(c) = self.get_char() {
+            if c.is_alphanumeric() || c == '_' {
+                self.current += 1;
+            } else {
+                break;
+            }
+        }
+
+        let lexeme = self.get_lexeme();
+        if let Some(token_type) = KEYWORDS.get(lexeme) {
+            return self.get_token(token_type.clone());
+        }
+
+        self.get_token(TokenType::Identifier)
+    }
+
+    fn lex_number(&mut self) -> Token<'s> {
+        while let Some(c) = self.get_char() {
+            if c.is_digit(10) {
+                self.current += 1;
+            } else {
+                break;
+            }
+        }
+
+        if self.get_char() == Some('.') {
+            self.current += 1;
+            while let Some(c) = self.get_char() {
+                if c.is_digit(10) {
+                    self.current += 1;
+                } else {
+                    break;
+                }
+            }
+            return self.get_token(TokenType::Float);
+        }
+        self.get_token(TokenType::Integer)
+    }
+
     fn next(&mut self) -> Token<'s> {
         self.lex_trivial();
         self.start = self.current;
@@ -83,6 +130,8 @@ impl<'s> Lexer<'s> {
 
         match c {
             '\0' => self.get_token(TokenType::Eof),
+            'a'..='z' | 'A'..='Z' | '_' => self.lex_identifier(),
+            '0'..='9' => self.lex_number(),
             _ => return self.get_token(TokenType::Err),
         }
     }
@@ -110,5 +159,37 @@ mod tests {
         assert_eq!(token.pos.line, 1);
         assert_eq!(token.pos.column, 1);
         assert_eq!(token.pos.start, Range::new(0, 0));
+    }
+
+    #[test]
+    fn test_lexing_literals() {
+        let source = "abc 123 45.67";
+        let mut lexer = Lexer::new(source);
+
+        let token = lexer.lex();
+        assert_eq!(token.token_type, TokenType::Identifier);
+        assert_eq!(token.lexeme, "abc");
+
+        let token = lexer.lex();
+        assert_eq!(token.token_type, TokenType::Integer);
+        assert_eq!(token.lexeme, "123");
+
+        let token = lexer.lex();
+        assert_eq!(token.token_type, TokenType::Float);
+        assert_eq!(token.lexeme, "45.67");
+    }
+
+    #[test]
+    fn test_lexing_types() {
+        let source = "i32 f32";
+        let mut lexer = Lexer::new(source);
+
+        let token = lexer.lex();
+        assert_eq!(token.token_type, TokenType::Type);
+        assert_eq!(token.lexeme, "i32");
+
+        let token = lexer.lex();
+        assert_eq!(token.token_type, TokenType::Type);
+        assert_eq!(token.lexeme, "f32");
     }
 }

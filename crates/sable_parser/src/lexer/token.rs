@@ -5,6 +5,10 @@ pub enum TokenType {
     #[default]
     Eof,
     Err,
+    Identifier,
+    Integer,
+    Float,
+    Type,
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
