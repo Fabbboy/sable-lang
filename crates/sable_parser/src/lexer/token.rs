@@ -14,12 +14,14 @@ pub enum TokenType {
 
     // Keywords
     Type,
+    Func,
 
     // Symbols
     Paren(bool),
     Brace(bool),
     Colon,
     Comma,
+    Semicolon,
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]

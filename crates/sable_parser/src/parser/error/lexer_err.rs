@@ -4,7 +4,7 @@ use crate::lexer::token::Token;
 
 use super::ParseErrReport;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct LexerError<'s> {
   token: Token<'s>,
 }

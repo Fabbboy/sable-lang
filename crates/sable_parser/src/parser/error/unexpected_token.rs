@@ -7,7 +7,7 @@ use super::ParseErrReport;
 
 pub const MAX_EXPECTED: usize = 8;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UnexpectedTokenError<'s> {
   expected: SmallVec<[TokenType; MAX_EXPECTED]>,
   found: Token<'s>,

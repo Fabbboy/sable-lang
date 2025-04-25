@@ -1,10 +1,16 @@
-use std::rc::Rc;
+use std::{
+  cell::{Ref, RefCell},
+  rc::Rc,
+};
 
 use smallvec::{SmallVec, smallvec};
 
 use crate::{
   ast::ast::AST,
-  lexer::{lexer::Lexer, token::TokenType},
+  lexer::{
+    lexer::Lexer,
+    token::{Token, TokenType},
+  },
 };
 
 use super::error::{
@@ -14,23 +20,23 @@ use super::error::{
 
 pub type PRes<'s, T> = Result<T, ParserError<'s>>;
 
-pub struct Parser<'p, 's> {
-  lexer: &'p mut Lexer<'s>,
+pub struct Parser<'s> {
+  lexer: RefCell<Lexer<'s>>,
   ast: Rc<AST>,
   errs: Vec<ParserError<'s>>,
 }
 
-impl<'p, 's> Parser<'p, 's> {
-  pub fn new(lexer: &'p mut Lexer<'s>) -> Self {
+impl<'s> Parser<'s> {
+  pub fn new(lexer: Lexer<'s>) -> Self {
     Parser {
-      lexer,
+      lexer: RefCell::new(lexer),
       ast: Rc::new(AST::new()),
       errs: Vec::new(),
     }
   }
 
-  fn next(&mut self, expected: SmallVec<[TokenType; MAX_EXPECTED]>) -> PRes<TokenType> {
-    let token = self.lexer.lex();
+  fn next(&self, expected: SmallVec<[TokenType; MAX_EXPECTED]>) -> PRes<Token> {
+    let token = self.lexer.borrow_mut().lex();
     if token.token_type == TokenType::Err {
       let err = UnexpectedTokenError::new(expected, token);
       return Err(ParserError::UnexpectedToken(err));
@@ -38,7 +44,7 @@ impl<'p, 's> Parser<'p, 's> {
 
     for expected_token in expected.iter() {
       if token.token_type == *expected_token {
-        return Ok(token.token_type);
+        return Ok(token);
       }
     }
 
@@ -46,7 +52,22 @@ impl<'p, 's> Parser<'p, 's> {
     Err(ParserError::UnexpectedToken(err))
   }
 
-  pub fn parse(&mut self) -> Result<Rc<AST>, &Vec<ParserError<'s>>> {
+  pub fn parse(&self) -> Result<Rc<AST>, &[ParserError<'s>]> {
+    loop {
+      let tok = self.next(smallvec![TokenType::Func, TokenType::Eof]);
+      match tok {
+        Err(err) => {
+          self.errs.push(err);
+          break;
+        }
+        Ok(token) => match token.token_type {
+          TokenType::Func => {}
+          TokenType::Eof => break,
+          _ => unreachable!(),
+        },
+      }
+    }
+
     if !self.errs.is_empty() {
       return Err(&self.errs);
     }
@@ -63,10 +84,10 @@ mod tests {
   #[test]
   fn test_parser() {
     let source = "abc";
-    let mut lexer = Lexer::new(source);
-    let parser = Parser::new(&mut lexer);
+    let lexer = Lexer::new(source);
+    let parser = Parser::new(lexer);
 
-    let token = parser.lexer.lex();
+    let token = parser.lexer.borrow_mut().lex();
     assert_eq!(token.token_type, TokenType::Identifier);
     assert_eq!(token.lexeme, "abc");
   }
@@ -74,8 +95,8 @@ mod tests {
   #[test]
   fn test_err_or_ast() {
     let source = "abc";
-    let mut lexer = Lexer::new(source);
-    let mut parser = Parser::new(&mut lexer);
+    let lexer = Lexer::new(source);
+    let parser = Parser::new(lexer);
 
     let result = parser.parse();
     assert!(result.is_ok());

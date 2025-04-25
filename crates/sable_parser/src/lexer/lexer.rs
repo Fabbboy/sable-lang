@@ -9,6 +9,7 @@ use super::token::{Token, TokenType};
 const KEYWORDS: phf::Map<&'static str, TokenType> = phf_map! {
     "i32" => TokenType::Type,
     "f32" => TokenType::Type,
+    "func" => TokenType::Func,
 };
 
 pub struct Lexer<'s> {

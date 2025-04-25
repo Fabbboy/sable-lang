@@ -7,7 +7,7 @@ pub mod lexer_err;
 
 pub type ParseErrReport<'s> = Report<'s, (&'s str, Range<usize>)>;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ParserError<'s> {
   UnexpectedToken(unexpected_token::UnexpectedTokenError<'s>),
   LexerError(lexer_err::LexerError<'s>),
