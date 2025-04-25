@@ -19,15 +19,19 @@ impl<'s> UnexpectedTokenError<'s> {
 
   pub fn report(&self, filename: &'s str) -> ParseErrReport<'s> {
     let short = (filename, self.found.pos.range.clone());
-    let one_of_msg = format!(
-      "expected one of: {}",
-      self
-        .expected
-        .iter()
-        .map(|t| format!("{:?}", t))
-        .collect::<Vec<_>>()
-        .join(", ")
-    );
+    let one_of_msg = if self.expected.len() == 1 {
+      format!("expected: {:?}", self.expected[0])
+    } else {
+      format!(
+        "expected one of: {}",
+        self
+          .expected
+          .iter()
+          .map(|t| format!("{:?}", t))
+          .collect::<Vec<_>>()
+          .join(", ")
+      )
+    };
 
     Report::build(ReportKind::Error, short.clone())
       .with_label(
@@ -43,13 +47,13 @@ impl<'s> UnexpectedTokenError<'s> {
 #[cfg(test)]
 mod tests {
   use ariadne::Source;
-use smallvec::smallvec;
+  use smallvec::smallvec;
 
   use super::*;
   use crate::lexer::{lexer::Lexer, token::TokenType};
 
-  const SOURCE: &str = r#"let hello = 123"#;
   const FILENAME: &str = "test.sbl";
+  const SOURCE: &str = r#"let 2 = 123"#;
 
   #[test]
   fn test_unexpected_token_error() {
