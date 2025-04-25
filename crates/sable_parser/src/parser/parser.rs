@@ -1,8 +1,10 @@
 use std::rc::Rc;
 
+use smallvec::smallvec;
+
 use crate::{ast::ast::AST, lexer::lexer::Lexer};
 
-use super::error::ParserError;
+use super::error::{ParserError, unexpected_token::UnexpectedTokenError};
 
 pub struct Parser<'p, 's> {
   lexer: &'p mut Lexer<'s>,
@@ -20,6 +22,13 @@ impl<'p, 's> Parser<'p, 's> {
   }
 
   pub fn parse(&mut self) -> Result<Rc<AST>, &Vec<ParserError<'s>>> {
+    self
+      .errs
+      .push(ParserError::UnexpectedToken(UnexpectedTokenError::new(
+        smallvec![],
+        self.lexer.lex(),
+      )));
+
     if !self.errs.is_empty() {
       return Err(&self.errs);
     }

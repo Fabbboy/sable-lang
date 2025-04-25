@@ -69,18 +69,20 @@ impl<'s> Lexer<'s> {
   }
 
   fn lex_trivial(&mut self) {
-    let c = self.get_char().unwrap_or('\0');
-    match c {
-      ' ' | '\r' | '\t' => {
-        self.current += 1;
-        self.column += 1;
-      }
-      '\n' => {
+    let mut c = self.get_char().unwrap_or('\0');
+    while c.is_whitespace() {
+      self.current += 1;
+      if c == '\n' {
         self.line += 1;
         self.column = 1;
-        self.current += 1;
+      } else {
+        self.column += 1;
       }
-      _ => {}
+
+      if self.current >= self.source.len() {
+        break;
+      }
+      c = self.get_char().unwrap();
     }
   }
 

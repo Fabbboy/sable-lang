@@ -14,3 +14,5 @@ smallvec = "1.15.0"
 
 [dependencies]
 sable_parser = { path = "crates/sable_parser" }
+ariadne = { workspace = true }
+smallvec = { workspace = true }

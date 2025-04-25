@@ -6,6 +6,7 @@ pub mod unexpected_token;
 
 pub type ParseErrReport<'s> = Report<'s, (&'s str, Range<usize>)>;
 
+#[derive(Debug)]
 pub enum ParserError<'s> {
   UnexpectedToken(unexpected_token::UnexpectedTokenError<'s>),
 }
