@@ -35,7 +35,7 @@ impl<'s> Parser<'s> {
     }
   }
 
-  fn next(&self, expected: SmallVec<[TokenType; MAX_EXPECTED]>) -> PRes<Token> {
+  fn next(&self, expected: SmallVec<[TokenType; MAX_EXPECTED]>) -> Result<Token<'s>, ParserError<'s>> {
     let token = self.lexer.borrow_mut().lex();
     if token.token_type == TokenType::Err {
       let err = UnexpectedTokenError::new(expected, token);
@@ -52,7 +52,7 @@ impl<'s> Parser<'s> {
     Err(ParserError::UnexpectedToken(err))
   }
 
-  pub fn parse(&self) -> Result<Rc<AST>, &[ParserError<'s>]> {
+  pub fn parse(&mut self) -> Result<Rc<AST>, &[ParserError<'s>]> {
     loop {
       let tok = self.next(smallvec![TokenType::Func, TokenType::Eof]);
       match tok {
@@ -96,7 +96,7 @@ mod tests {
   fn test_err_or_ast() {
     let source = "abc";
     let lexer = Lexer::new(source);
-    let parser = Parser::new(lexer);
+    let mut parser = Parser::new(lexer);
 
     let result = parser.parse();
     assert!(result.is_ok());
