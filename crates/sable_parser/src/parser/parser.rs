@@ -1,10 +1,18 @@
 use std::rc::Rc;
 
-use smallvec::smallvec;
+use smallvec::{SmallVec, smallvec};
 
-use crate::{ast::ast::AST, lexer::lexer::Lexer};
+use crate::{
+  ast::ast::AST,
+  lexer::{lexer::Lexer, token::TokenType},
+};
 
-use super::error::{ParserError, unexpected_token::UnexpectedTokenError};
+use super::error::{
+  ParserError,
+  unexpected_token::{MAX_EXPECTED, UnexpectedTokenError},
+};
+
+pub type PRes<'s, T> = Result<T, ParserError<'s>>;
 
 pub struct Parser<'p, 's> {
   lexer: &'p mut Lexer<'s>,
@@ -19,6 +27,23 @@ impl<'p, 's> Parser<'p, 's> {
       ast: Rc::new(AST::new()),
       errs: Vec::new(),
     }
+  }
+
+  fn next(&mut self, expected: SmallVec<[TokenType; MAX_EXPECTED]>) -> PRes<TokenType> {
+    let token = self.lexer.lex();
+    if token.token_type == TokenType::Err {
+      let err = UnexpectedTokenError::new(expected, token);
+      return Err(ParserError::UnexpectedToken(err));
+    }
+
+    for expected_token in expected.iter() {
+      if token.token_type == *expected_token {
+        return Ok(token.token_type);
+      }
+    }
+
+    let err = UnexpectedTokenError::new(expected, token);
+    Err(ParserError::UnexpectedToken(err))
   }
 
   pub fn parse(&mut self) -> Result<Rc<AST>, &Vec<ParserError<'s>>> {

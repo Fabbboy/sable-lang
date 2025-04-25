@@ -5,12 +5,12 @@ use crate::lexer::token::{Token, TokenType};
 
 use super::ParseErrReport;
 
-const MAX_EXPECTED: usize = 8;
+pub const MAX_EXPECTED: usize = 8;
 
 #[derive(Debug)]
 pub struct UnexpectedTokenError<'s> {
-  pub expected: SmallVec<[TokenType; MAX_EXPECTED]>,
-  pub found: Token<'s>,
+  expected: SmallVec<[TokenType; MAX_EXPECTED]>,
+  found: Token<'s>,
 }
 
 impl<'s> UnexpectedTokenError<'s> {
