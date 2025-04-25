@@ -1,7 +1,9 @@
-use ariadne::Report;
+use ariadne::{Label, Report, ReportKind};
 use smallvec::SmallVec;
 
 use crate::lexer::token::{Token, TokenType};
+
+use super::ParseErrReport;
 
 const MAX_EXPECTED: usize = 8;
 
@@ -15,7 +17,49 @@ impl<'s> UnexpectedTokenError<'s> {
     Self { expected, found }
   }
 
-  pub fn report(&self) -> Report {
-    todo!()
+  pub fn report(&self, filename: &'s str) -> ParseErrReport<'s> {
+    let short = (filename, self.found.pos.range.clone());
+    let one_of_msg = format!(
+      "expected one of: {}",
+      self
+        .expected
+        .iter()
+        .map(|t| format!("{:?}", t))
+        .collect::<Vec<_>>()
+        .join(", ")
+    );
+
+    Report::build(ReportKind::Error, short.clone())
+      .with_label(
+        Label::new(short)
+          .with_message(format!("unexpected token: {:?}", self.found.token_type))
+          .with_color(ariadne::Color::Red),
+      )
+      .with_note(one_of_msg)
+      .finish()
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use ariadne::Source;
+use smallvec::smallvec;
+
+  use super::*;
+  use crate::lexer::{lexer::Lexer, token::TokenType};
+
+  const SOURCE: &str = r#"let hello = 123"#;
+  const FILENAME: &str = "test.sbl";
+
+  #[test]
+  fn test_unexpected_token_error() {
+    let mut lexer = Lexer::new(SOURCE);
+    lexer.lex();
+    let unexpected = lexer.lex();
+    let expected = smallvec![TokenType::Identifier];
+
+    let err = UnexpectedTokenError::new(expected.clone(), unexpected.clone());
+    let report = err.report(FILENAME);
+    report.print((FILENAME, Source::from(SOURCE))).unwrap();
   }
 }
