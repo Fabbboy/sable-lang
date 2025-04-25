@@ -1,7 +1,4 @@
-use std::{
-  cell::{Ref, RefCell},
-  rc::Rc,
-};
+use std::rc::Rc;
 
 use smallvec::{SmallVec, smallvec};
 
@@ -21,7 +18,7 @@ use super::error::{
 pub type PRes<'s, T> = Result<T, ParserError<'s>>;
 
 pub struct Parser<'s> {
-  lexer: RefCell<&'s mut Lexer<'s>>,
+  lexer: &'s mut Lexer<'s>,
   ast: Rc<AST>,
   errs: Vec<ParserError<'s>>,
 }
@@ -29,14 +26,14 @@ pub struct Parser<'s> {
 impl<'s> Parser<'s> {
   pub fn new(lexer: &'s mut Lexer<'s>) -> Parser<'s> {
     Parser {
-      lexer: RefCell::new(lexer),
+      lexer,
       ast: Rc::new(AST::new()),
       errs: Vec::new(),
     }
   }
 
-  fn next(&self, expected: SmallVec<[TokenType; MAX_EXPECTED]>) -> Result<Token<'s>, ParserError<'s>> {
-    let token = self.lexer.borrow_mut().lex();
+  fn next(&mut self, expected: SmallVec<[TokenType; MAX_EXPECTED]>) -> Result<Token<'s>, ParserError<'s>> {
+    let token = self.lexer.lex();
     if token.token_type == TokenType::Err {
       let err = UnexpectedTokenError::new(expected, token);
       return Err(ParserError::UnexpectedToken(err));
@@ -87,7 +84,7 @@ mod tests {
     let mut lexer = Lexer::new(source);
     let parser = Parser::new(&mut lexer);
 
-    let token = parser.lexer.borrow_mut().lex();
+    let token = parser.lexer.lex();
     assert_eq!(token.token_type, TokenType::Identifier);
     assert_eq!(token.lexeme, "abc");
   }
