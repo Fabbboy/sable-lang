@@ -11,3 +11,4 @@ resolver = "3"
 phf = "0.11.3"
 
 [dependencies]
+sable_parser = { path = "crates/sable_parser" }
