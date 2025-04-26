@@ -74,28 +74,39 @@ impl<'s> Lexer<'s> {
     }
   }
 
-  fn lex_trivial(&mut self) {
-    let mut c = self.get_char().unwrap_or('\0');
-    while c.is_whitespace() {
-      self.current += 1;
-      if c == '\n' {
-        self.line += 1;
-        self.column = 1;
-      } else {
-        self.column += 1;
-      }
+  fn advance(&mut self) -> Option<char> {
+    if self.current >= self.source.len() {
+      return None;
+    }
 
-      if self.current >= self.source.len() {
+    let c = self.get_char().unwrap(); // Always safe because we checked bounds
+    let len = c.len_utf8();
+
+    self.current += len;
+    self.column += 1;
+    Some(c)
+  }
+
+  fn lex_trivial(&mut self) {
+    while let Some(c) = self.get_char() {
+      if c.is_whitespace() {
+        self.advance();
+        if c == '\n' {
+          self.line += 1;
+          self.column = 1;
+        } else {
+          self.column += 1;
+        }
+      } else {
         break;
       }
-      c = self.get_char().unwrap();
     }
   }
 
   fn lex_identifier(&mut self) -> Token<'s> {
     while let Some(c) = self.get_char() {
       if c.is_alphanumeric() || c == '_' {
-        self.current += 1;
+        self.advance();
       } else {
         break;
       }
@@ -112,17 +123,17 @@ impl<'s> Lexer<'s> {
   fn lex_number(&mut self) -> Token<'s> {
     while let Some(c) = self.get_char() {
       if c.is_digit(10) {
-        self.current += 1;
+        self.advance();
       } else {
         break;
       }
     }
 
     if self.get_char() == Some('.') {
-      self.current += 1;
+      self.advance();
       while let Some(c) = self.get_char() {
         if c.is_digit(10) {
-          self.current += 1;
+          self.advance();
         } else {
           break;
         }
@@ -135,7 +146,7 @@ impl<'s> Lexer<'s> {
   fn lex_comment(&mut self) {
     while let Some(c) = self.get_char() {
       if c != '\n' {
-        self.current += 1;
+       self.advance();
       } else {
         break;
       }
@@ -150,7 +161,7 @@ impl<'s> Lexer<'s> {
       return self.get_token(TokenType::Eof);
     }
     let c = c.unwrap();
-    self.current += 1;
+    self.advance();
 
     match c {
       '\0' => self.get_token(TokenType::Eof),
@@ -165,7 +176,7 @@ impl<'s> Lexer<'s> {
       ';' => self.get_token(TokenType::Semicolon),
       '/' => {
         if self.get_char() == Some('/') {
-          self.current += 1;
+          self.advance();
           self.lex_comment();
           return self.next();
         }
