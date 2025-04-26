@@ -8,7 +8,7 @@ use smallvec::{SmallVec, smallvec};
 use crate::{
   ast::{
     ast::AST,
-    expression::{Expression, literal_expr::LiteralExpression},
+    expression::{Expression, block_expr::BlockExpression, literal_expr::LiteralExpression},
     function::Function,
     statement::{Statement, return_stmt::ReturnStatement},
   },
@@ -16,6 +16,7 @@ use crate::{
     lexer::Lexer,
     token::{Token, TokenData, TokenType},
   },
+  position::Position,
 };
 
 use super::error::{
@@ -151,13 +152,23 @@ impl<'s> Parser<'s> {
 
   fn parse_body(
     &mut self,
-  ) -> Result<Vec<Statement<'s>>, SmallVec<[ParserError<'s>; MAX_EXPECTED]>> {
+  ) -> Result<BlockExpression<'s>, SmallVec<[ParserError<'s>; MAX_EXPECTED]>> {
     let mut statements = Vec::new();
     let mut errors = SmallVec::new();
+
+    let mut pos = Position::default();
+
     while !self.peek(smallvec![TokenType::Brace(false)]) {
       let statement = self.parse_statement();
       match statement {
-        Ok(stmt) => statements.push(stmt),
+        Ok(stmt) => {
+          let stmt_pos = stmt.get_pos();
+          if stmt_pos.range.start == 0 {
+            pos.range.start = stmt_pos.range.start;
+          }
+          pos.range.end = stmt_pos.range.end;
+          statements.push(stmt);
+        }
         Err(err) => {
           errors.push(err);
           self.sync(smallvec![TokenType::Semicolon, TokenType::Brace(false)]);
@@ -167,8 +178,9 @@ impl<'s> Parser<'s> {
         }
       }
     }
+
     if errors.is_empty() {
-      Ok(statements)
+      Ok(BlockExpression::new(statements, pos))
     } else {
       Err(errors)
     }

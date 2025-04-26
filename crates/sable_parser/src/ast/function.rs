@@ -1,17 +1,17 @@
 use crate::{info::ValType, position::Position};
 
-use super::statement::Statement;
+use super::expression::block_expr::BlockExpression;
 
 #[derive(Debug)]
 pub struct Function<'s> {
   name: &'s str,
   pos: Position,
   ret_type: ValType,
-  body: Vec<Statement<'s>>,
+  body: BlockExpression<'s>,
 }
 
 impl<'s> Function<'s> {
-  pub fn new(name: &'s str, pos: Position, ret_type: ValType, body: Vec<Statement<'s>>) -> Self {
+  pub fn new(name: &'s str, pos: Position, ret_type: ValType, body: BlockExpression<'s>) -> Self {
     Self {
       name,
       pos,
@@ -32,7 +32,7 @@ impl<'s> Function<'s> {
     self.ret_type.clone()
   }
 
-  pub fn get_body(&self) -> &Vec<Statement<'s>> {
+  pub fn get_body(&self) -> &BlockExpression<'s> {
     &self.body
   }
 }
