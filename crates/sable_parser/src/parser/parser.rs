@@ -156,17 +156,17 @@ impl<'s> Parser<'s> {
     let mut statements = Vec::new();
     let mut errors = SmallVec::new();
 
-    let mut pos = Position::default();
+    let mut pos: Option<Position> = None;
 
     while !self.peek(smallvec![TokenType::Brace(false)]) {
       let statement = self.parse_statement();
       match statement {
         Ok(stmt) => {
           let stmt_pos = stmt.get_pos();
-          if stmt_pos.range.start == 0 {
-            pos.range.start = stmt_pos.range.start;
+          match &mut pos {
+            Some(p) => p.range.end = stmt_pos.range.end,
+            None => pos = Some(stmt_pos),
           }
-          pos.range.end = stmt_pos.range.end;
           statements.push(stmt);
         }
         Err(err) => {
@@ -180,7 +180,7 @@ impl<'s> Parser<'s> {
     }
 
     if errors.is_empty() {
-      Ok(BlockExpression::new(statements, pos))
+      Ok(BlockExpression::new(statements, pos.unwrap_or_default()))
     } else {
       Err(errors)
     }
