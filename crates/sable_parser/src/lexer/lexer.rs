@@ -132,6 +132,16 @@ impl<'s> Lexer<'s> {
     self.get_token_with_data(TokenType::Integer, Some(TokenData::Type(ValType::I32)))
   }
 
+  fn lex_comment(&mut self) {
+    while let Some(c) = self.get_char() {
+      if c != '\n' {
+        self.current += 1;
+      } else {
+        break;
+      }
+    }
+  }
+
   fn next(&mut self) -> Token<'s> {
     self.lex_trivial();
     self.start = self.current;
@@ -153,6 +163,14 @@ impl<'s> Lexer<'s> {
       ':' => self.get_token(TokenType::Colon),
       ',' => self.get_token(TokenType::Comma),
       ';' => self.get_token(TokenType::Semicolon),
+      '/' => {
+        if self.get_char() == Some('/') {
+          self.current += 1;
+          self.lex_comment();
+          return self.next();
+        }
+        unimplemented!("Unexpected character: {}", c);
+      }
       _ => return self.get_token(TokenType::Err),
     }
   }
