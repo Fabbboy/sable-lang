@@ -16,6 +16,7 @@ use crate::{
     lexer::Lexer,
     token::{Token, TokenData, TokenType},
   },
+  parser::error::lexer_err::LexerError,
   position::Position,
 };
 
@@ -61,8 +62,8 @@ impl<'s> Parser<'s> {
   ) -> Result<Token<'s>, ParserError<'s>> {
     let token = self.lexer.peek();
     if token.token_type == TokenType::Err {
-      let err = UnexpectedTokenError::new(expected, token);
-      return Err(ParserError::UnexpectedToken(err));
+      let err = LexerError::new(token);
+      return Err(ParserError::LexerError(err));
     }
 
     for expected_token in expected.iter() {

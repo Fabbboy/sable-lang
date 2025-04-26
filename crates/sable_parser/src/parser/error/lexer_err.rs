@@ -17,6 +17,11 @@ impl<'s> LexerError<'s> {
   pub fn report(&self, filename: &'s str) -> ParseErrReport<'s> {
     let short = (filename, self.token.pos.range.clone());
     Report::build(ReportKind::Error, short.clone())
-      .with_label(Label::new(short).with_message("lexer failed to tokenize this")).finish()
+      .with_label(
+        Label::new(short)
+          .with_color(ariadne::Color::Red)
+          .with_message("lexer failed to tokenize this"),
+      )
+      .finish()
   }
 }
