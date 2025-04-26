@@ -58,7 +58,7 @@ impl<'s> Parser<'s> {
     &mut self,
     expected: SmallVec<[TokenType; MAX_EXPECTED]>,
   ) -> Result<Token<'s>, ParserError<'s>> {
-    let token = self.lexer.lex();
+    let token = self.lexer.peek();
     if token.token_type == TokenType::Err {
       let err = UnexpectedTokenError::new(expected, token);
       return Err(ParserError::UnexpectedToken(err));
@@ -66,7 +66,7 @@ impl<'s> Parser<'s> {
 
     for expected_token in expected.iter() {
       if token.token_type == *expected_token {
-        return Ok(token);
+        return Ok(self.lexer.lex());
       }
     }
 
@@ -160,6 +160,10 @@ impl<'s> Parser<'s> {
         Ok(stmt) => statements.push(stmt),
         Err(err) => {
           errors.push(err);
+          self.sync(smallvec![TokenType::Semicolon, TokenType::Brace(false)]);
+          if self.peek(smallvec![TokenType::Semicolon]) {
+            next!(@vec self, [TokenType::Semicolon]);
+          }
         }
       }
     }
