@@ -2,7 +2,9 @@ use ariadne::Source;
 use sable_parser::{lexer::lexer::Lexer, parser::parser::Parser};
 
 const SOURCE: &str = r#"
-func i32 main () {}
+func i32 main () {
+    return 2;
+}
 "#;
 const FILENAME: &str = "test.sbl";
 
@@ -11,7 +13,7 @@ fn main() {
   let mut parser = Parser::new(&mut lexer);
   let parse_res = parser.parse();
   match parse_res {
-    Ok(ast) => println!("Parsed successfully: {:?}", ast),
+    Ok(ast) => println!("Parsed successfully: {:#?}", ast),
     Err(errs) => {
       for err in errs {
         err

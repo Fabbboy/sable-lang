@@ -6,10 +6,15 @@ use std::{
 use smallvec::{SmallVec, smallvec};
 
 use crate::{
-  ast::{ast::AST, function::Function},
+  ast::{
+    ast::AST,
+    expression::{Expression, literal_expr::LiteralExpression},
+    function::Function,
+    statement::{Statement, return_stmt::ReturnStatement},
+  },
   lexer::{
     lexer::Lexer,
-    token::{Token, TokenType},
+    token::{Token, TokenData, TokenType},
   },
 };
 
@@ -69,6 +74,21 @@ impl<'s> Parser<'s> {
     Err(ParserError::UnexpectedToken(err))
   }
 
+  fn peek(&mut self, expected: SmallVec<[TokenType; MAX_EXPECTED]>) -> bool {
+    let token = self.lexer.peek();
+    if token.token_type == TokenType::Err {
+      return false;
+    }
+
+    for expected_token in expected.iter() {
+      if token.token_type == *expected_token {
+        return true;
+      }
+    }
+
+    false
+  }
+
   fn sync(&mut self, expected: SmallVec<[TokenType; MAX_EXPECTED]>) {
     loop {
       let token = self.lexer.peek();
@@ -82,17 +102,95 @@ impl<'s> Parser<'s> {
     }
   }
 
+  fn parse_factor(&mut self) -> Result<Expression<'s>, ParserError<'s>> {
+    let tok = next!(@plain self, [TokenType::Integer, TokenType::Float]);
+    return match tok.token_type {
+      TokenType::Integer | TokenType::Float => {
+        let val = match tok.data {
+          Some(TokenData::Type(ty)) => ty,
+          _ => unreachable!(),
+        };
+        let lit = LiteralExpression::new(tok.lexeme, val, tok.pos);
+        Ok(Expression::LiteralExpression(lit))
+      }
+      _ => unreachable!(),
+    };
+  }
+
+  fn parse_term(&mut self) -> Result<Expression<'s>, ParserError<'s>> {
+    let lhs = self.parse_factor()?;
+    return Ok(lhs);
+  }
+
+  fn parse_expression(&mut self) -> Result<Expression<'s>, ParserError<'s>> {
+    let lhs = self.parse_term()?;
+    return Ok(lhs);
+  }
+
+  fn parse_statement(&mut self) -> Result<Statement<'s>, ParserError<'s>> {
+    if self.peek(smallvec![TokenType::Integer, TokenType::Float]) {
+      let expr = self.parse_expression()?;
+      next!(@plain self, [TokenType::Semicolon]);
+      let stmt = Statement::Expression(expr);
+      return Ok(stmt);
+    }
+
+    let tok = next!(@plain self, [TokenType::Return]);
+    let mut pos = tok.pos;
+    return match tok.token_type {
+      TokenType::Return => {
+        let expr = self.parse_expression()?;
+        pos.range.end = expr.get_pos().range.end;
+        next!(@plain self, [TokenType::Semicolon]);
+        let stmt = Statement::ReturnStatement(ReturnStatement::new(expr, pos));
+        Ok(stmt)
+      }
+      _ => unreachable!(),
+    };
+  }
+
+  fn parse_body(
+    &mut self,
+  ) -> Result<Vec<Statement<'s>>, SmallVec<[ParserError<'s>; MAX_EXPECTED]>> {
+    let mut statements = Vec::new();
+    let mut errors = SmallVec::new();
+    while !self.peek(smallvec![TokenType::Brace(false)]) {
+      let statement = self.parse_statement();
+      match statement {
+        Ok(stmt) => statements.push(stmt),
+        Err(err) => {
+          errors.push(err);
+        }
+      }
+    }
+    if errors.is_empty() {
+      Ok(statements)
+    } else {
+      Err(errors)
+    }
+  }
+
   fn parse_function(&mut self) -> Result<Function<'s>, SmallVec<[ParserError<'s>; MAX_EXPECTED]>> {
     let type_ = next!(@vec self, [TokenType::Type]);
+    let ret_ty = match type_.data {
+      Some(TokenData::Type(ty)) => ty,
+      _ => unreachable!(),
+    };
     let mut ty_pos = type_.pos;
     let name = next!(@vec self, [TokenType::Identifier]);
     next!(@vec self, [TokenType::Paren(true)]);
     next!(@vec self, [TokenType::Paren(false)]);
     next!(@vec self, [TokenType::Brace(true)]);
+    let body = self.parse_body();
+    if body.is_err() {
+      return Err(body.unwrap_err());
+    }
+    let body = body.unwrap();
+
     next!(@vec self, [TokenType::Brace(false)]);
 
     ty_pos.range.end = name.pos.range.end;
-    Ok(Function::new(name.lexeme, ty_pos))
+    Ok(Function::new(name.lexeme, ty_pos, ret_ty, body))
   }
 
   pub fn parse(&mut self) -> Result<Ref<AST>, &[ParserError<'s>]> {

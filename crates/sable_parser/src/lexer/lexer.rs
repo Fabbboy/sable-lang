@@ -2,14 +2,15 @@ use std::ops::Range;
 
 use phf::phf_map;
 
-use crate::position::Position;
+use crate::{info::ValType, position::Position};
 
-use super::token::{Token, TokenType};
+use super::token::{Token, TokenData, TokenType};
 
-const KEYWORDS: phf::Map<&'static str, TokenType> = phf_map! {
-    "i32" => TokenType::Type,
-    "f32" => TokenType::Type,
-    "func" => TokenType::Func,
+const KEYWORDS: phf::Map<&'static str, (TokenType, Option<TokenData>)> = phf_map! {
+    "i32" => (TokenType::Type, Some(TokenData::Type(ValType::I32))),
+    "f32" => (TokenType::Type, Some(TokenData::Type(ValType::F32))),
+    "func" => (TokenType::Func, None),
+    "return" => (TokenType::Return, None),
 };
 
 pub struct Lexer<'s> {
@@ -42,7 +43,11 @@ impl<'s> Lexer<'s> {
   }
 
   fn get_token(&self, token_type: TokenType) -> Token<'s> {
-    Token::new(token_type, self.get_lexeme(), self.get_pos())
+    Token::new(token_type, self.get_lexeme(), self.get_pos(), None)
+  }
+
+  fn get_token_with_data(&self, token_type: TokenType, data: Option<TokenData>) -> Token<'s> {
+    Token::new(token_type, self.get_lexeme(), self.get_pos(), data)
   }
 
   fn get_lexeme(&self) -> &'s str {
@@ -98,7 +103,7 @@ impl<'s> Lexer<'s> {
 
     let lexeme = self.get_lexeme();
     if let Some(token_type) = KEYWORDS.get(lexeme) {
-      return self.get_token(token_type.clone());
+      return self.get_token_with_data(token_type.0.clone(), token_type.1.clone());
     }
 
     self.get_token(TokenType::Identifier)
@@ -122,9 +127,9 @@ impl<'s> Lexer<'s> {
           break;
         }
       }
-      return self.get_token(TokenType::Float);
+      return self.get_token_with_data(TokenType::Float, Some(TokenData::Type(ValType::F32)));
     }
-    self.get_token(TokenType::Integer)
+    self.get_token_with_data(TokenType::Integer, Some(TokenData::Type(ValType::I32)))
   }
 
   fn next(&mut self) -> Token<'s> {
@@ -147,6 +152,7 @@ impl<'s> Lexer<'s> {
       '}' => self.get_token(TokenType::Brace(false)),
       ':' => self.get_token(TokenType::Colon),
       ',' => self.get_token(TokenType::Comma),
+      ';' => self.get_token(TokenType::Semicolon),
       _ => return self.get_token(TokenType::Err),
     }
   }
