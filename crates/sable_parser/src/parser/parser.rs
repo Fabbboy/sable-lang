@@ -218,11 +218,10 @@ impl<'s> Parser<'s> {
     }
 
     let tok = next!(@plain self, [TokenType::Return, TokenType::Var]);
-    let pos = tok.pos;
     return match tok.token_type {
       TokenType::Return => {
         let expr = self.parse_expression()?;
-        let pos = pos.merge(expr.get_pos());
+        let pos = tok.pos.merge(expr.get_pos());
         next!(@plain self, [TokenType::Semicolon]);
         let stmt = Statement::ReturnStatement(ReturnStatement::new(expr, pos));
         Ok(stmt)
