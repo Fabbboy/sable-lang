@@ -1,11 +1,18 @@
 use crate::position::Position;
 
-pub mod literal_expr;
-pub mod block_expr;
 pub mod assign_expr;
-pub mod variable_expr;
 pub mod binary_expr;
+pub mod block_expr;
+pub mod literal_expr;
 pub mod null_expr;
+pub mod variable_expr;
+
+pub use assign_expr::AssignExpression;
+pub use binary_expr::BinaryExpression;
+pub use block_expr::BlockExpression;
+pub use literal_expr::LiteralExpression;
+pub use null_expr::NullExpression;
+pub use variable_expr::VariableExpression;
 
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]

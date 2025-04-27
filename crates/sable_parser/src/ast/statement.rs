@@ -2,8 +2,11 @@ use crate::position::Position;
 
 use super::expression;
 
-pub mod return_stmt;
 pub mod let_stmt;
+pub mod return_stmt;
+
+pub use let_stmt::LetStatement;
+pub use return_stmt::ReturnStatement;
 
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]

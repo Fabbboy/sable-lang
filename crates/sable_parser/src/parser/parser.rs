@@ -1,7 +1,4 @@
-use std::{
-  cell::RefCell,
-  rc::Rc,
-};
+use std::{cell::RefCell, rc::Rc};
 
 use smallvec::{SmallVec, smallvec};
 
@@ -9,12 +6,11 @@ use crate::{
   ast::{
     ast::AST,
     expression::{
-      Expression, assign_expr::AssignExpression, binary_expr::BinaryExpression,
-      block_expr::BlockExpression, literal_expr::LiteralExpression, null_expr::NullExpression,
-      variable_expr::VariableExpression,
+      AssignExpression, BinaryExpression, BlockExpression, Expression, LiteralExpression,
+      NullExpression, VariableExpression,
     },
     function::{Function, FunctionParameter},
-    statement::{Statement, return_stmt::ReturnStatement, let_stmt::LetStatement},
+    statement::{LetStatement, ReturnStatement, Statement},
   },
   lexer::{
     lexer::Lexer,
