@@ -19,7 +19,7 @@ fn main() {
       let serialized = serde_json::to_string_pretty(&*ast).unwrap();
       println!("AST: {serialized}");
       ast
-    },
+    }
     Err(errs) => {
       for err in errs {
         err

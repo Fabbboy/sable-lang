@@ -1,4 +1,7 @@
-use crate::{info::{OperatorType, ValType}, position::Position};
+use crate::{
+  info::{OperatorType, ValType},
+  position::Position,
+};
 
 #[derive(Debug, Clone, PartialEq, Default)]
 pub enum TokenType {

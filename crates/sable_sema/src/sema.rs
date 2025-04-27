@@ -4,7 +4,7 @@ use sable_parser::ast::ast::AST;
 
 use crate::error::AnalyzerError;
 
-pub struct Sema<'a,'s> {
+pub struct Sema<'a, 's> {
   ast: RefMut<'a, AST<'s>>,
   errors: Vec<AnalyzerError<'s>>,
 }
