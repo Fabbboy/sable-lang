@@ -1,6 +1,7 @@
 use crate::{info::ValType, position::Position};
 
 #[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub struct LiteralExpression<'s> {
   value: &'s str,
   type_: ValType,

@@ -1,6 +1,7 @@
 use super::function::Function;
 
 #[derive(Debug, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub struct AST<'s> {
   functions: Vec<Function<'s>>,
 }

@@ -1,6 +1,7 @@
 use crate::{ast::expression::assign_expr::AssignExpression, info::ValType, position::Position};
 
 #[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub struct VariableDeclStatement<'s> {
   type_: ValType,
   name: &'s str,

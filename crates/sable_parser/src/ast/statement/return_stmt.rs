@@ -1,6 +1,7 @@
 use crate::{ast::expression::Expression, position::Position};
 
 #[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub struct ReturnStatement<'s> {
   value: Expression<'s>,
   pos: Position,

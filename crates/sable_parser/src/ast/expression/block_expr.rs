@@ -1,6 +1,7 @@
 use crate::{ast::statement::Statement, position::Position};
 
 #[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub struct BlockExpression<'s> {
   pub stmts: Vec<Statement<'s>>,
   pub pos: Position,

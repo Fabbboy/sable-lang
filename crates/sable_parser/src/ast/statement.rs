@@ -6,6 +6,7 @@ pub mod return_stmt;
 pub mod var_decl_stmt;
 
 #[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub enum Statement<'s> {
   Expression(expression::Expression<'s>),
   ReturnStatement(return_stmt::ReturnStatement<'s>),

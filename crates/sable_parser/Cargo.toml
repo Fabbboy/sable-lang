@@ -6,7 +6,11 @@ edition = "2024"
 [lib]
 crate-type = ["rlib"]
 
+[features]
+serde = []
+
 [dependencies]
 phf = { workspace = true, features = ["macros"] }
 smallvec = { workspace = true }
 ariadne = { workspace = true }
+serde = { workspace = true, features = ["derive"] }

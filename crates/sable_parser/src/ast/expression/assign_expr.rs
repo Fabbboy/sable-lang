@@ -3,6 +3,7 @@ use crate::position::Position;
 use super::Expression;
 
 #[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub struct AssignExpression<'s> {
   asignee: &'s str,
   value: Box<Expression<'s>>,

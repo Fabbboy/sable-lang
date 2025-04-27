@@ -3,6 +3,7 @@ use crate::{info::ValType, position::Position};
 use super::expression::block_expr::BlockExpression;
 
 #[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub struct Function<'s> {
   name: &'s str,
   pos: Position,

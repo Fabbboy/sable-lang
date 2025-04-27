@@ -6,6 +6,7 @@ pub mod assign_expr;
 pub mod variable_expr;
 
 #[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub enum Expression<'s> {
   LiteralExpression(literal_expr::LiteralExpression<'s>),
   BlockExpression(block_expr::BlockExpression<'s>),

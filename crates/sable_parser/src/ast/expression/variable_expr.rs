@@ -1,6 +1,7 @@
 use crate::position::Position;
 
 #[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub struct VariableExpression<'s> {
   name: &'s str,
   pos: Position,

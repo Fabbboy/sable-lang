@@ -19,7 +19,10 @@ fn main() {
   let mut parser = Parser::new(&mut lexer);
   let parse_res = parser.parse();
   match parse_res {
-    Ok(ast) => println!("Parsed successfully: {:#?}", ast),
+    Ok(ast) => {
+      let serialized = serde_json::to_string_pretty(&*ast).unwrap();
+      println!("AST: {serialized}");
+    },
     Err(errs) => {
       for err in errs {
         err

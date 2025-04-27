@@ -1,6 +1,7 @@
 use std::ops::Range;
 
 #[derive(Debug, Clone, PartialEq, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub struct Position {
   pub line: usize,
   pub column: usize,
