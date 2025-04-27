@@ -8,7 +8,8 @@ func i32 main () {
    // or redeclare them
    // you can also just declare them with initializer
    var i32 counter = 123;
-   return 2;
+   counter = 123;
+   return counter;
 }
 "#;
 const FILENAME: &str = "test.sbl";

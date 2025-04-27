@@ -10,7 +10,7 @@ use crate::{
     ast::AST,
     expression::{
       Expression, assign_expr::AssignExpression, block_expr::BlockExpression,
-      literal_expr::LiteralExpression,
+      literal_expr::LiteralExpression, variable_expr::VariableExpression,
     },
     function::Function,
     statement::{Statement, return_stmt::ReturnStatement, var_decl_stmt::VariableDeclStatement},
@@ -131,7 +131,8 @@ impl<'s> Parser<'s> {
           let expr = self.parse_assign(name)?;
           return Ok(Expression::AssignExpression(expr));
         }
-        unimplemented!("Identifier: {}", name);
+        let lit = VariableExpression::new(name, tok.pos);
+        Ok(Expression::VariableExpression(lit))
       }
       _ => unreachable!(),
     };
@@ -178,7 +179,11 @@ impl<'s> Parser<'s> {
   }
 
   fn parse_statement(&mut self) -> Result<Statement<'s>, ParserError<'s>> {
-    if self.peek(smallvec![TokenType::Integer, TokenType::Float]) {
+    if self.peek(smallvec![
+      TokenType::Integer,
+      TokenType::Float,
+      TokenType::Identifier
+    ]) {
       let expr = self.parse_expression()?;
       next!(@plain self, [TokenType::Semicolon]);
       let stmt = Statement::Expression(expr);
