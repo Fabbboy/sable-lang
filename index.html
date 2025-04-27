@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AST Visualizer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-6">
+  <div class="max-w-5xl mx-auto space-y-6">
+    <h1 class="text-3xl font-bold text-center">🚀 Sable-Lang AST Visualizer</h1>
+
+    <!-- Upload / Input -->
+    <div class="bg-white p-4 rounded shadow">
+      <textarea id="json-input" class="w-full h-40 p-2 border rounded" placeholder="Paste your JSON AST here..."></textarea>
+      <button onclick="parseAST()" class="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+        Visualize AST
+      </button>
+    </div>
+
+    <!-- Search -->
+    <div class="bg-white p-4 rounded shadow">
+      <input id="search" type="text" placeholder="Search..." oninput="filterAST()" class="w-full p-2 border rounded">
+    </div>
+
+    <!-- Rendered AST -->
+    <div id="ast-container" class="space-y-4"></div>
+  </div>
+
+  <script>
+    let fullAST = null;
+
+    function parseAST() {
+      const input = document.getElementById('json-input').value;
+      try {
+        fullAST = JSON.parse(input);
+        renderAST(fullAST);
+      } catch (e) {
+        alert("Invalid JSON!");
+      }
+    }
+
+    function renderAST(ast) {
+      const container = document.getElementById('ast-container');
+      container.innerHTML = '';
+      traverse(ast, container);
+    }
+
+    function traverse(node, parent) {
+      if (Array.isArray(node)) {
+        node.forEach(child => traverse(child, parent));
+      } else if (typeof node === 'object') {
+        for (const [key, value] of Object.entries(node)) {
+          dispatchRender(key, value, parent);
+        }
+      }
+    }
+
+    function dispatchRender(type, data, parent) {
+      const renderer = handlers[type] || renderGeneric;
+      const wrapper = document.createElement('div');
+      wrapper.className = "bg-white p-4 rounded shadow";
+      renderer(data, wrapper);
+      parent.appendChild(wrapper);
+    }
+
+    const handlers = {
+      "functions": renderFunctions,
+      "body": renderBody,
+      "VariableDeclStatement": renderVariableDecl,
+      "AssignExpression": renderAssignExpression,
+      "LiteralExpression": renderLiteral,
+      "ReturnStatement": renderReturnStatement,
+      "VariableExpression": renderVariableExpr,
+      "Expression": renderExpression, // Important fix
+    };
+
+    function renderFunctions(functions, parent) {
+      functions.forEach(func => {
+        const section = renderSection(`Function: ${func.name}`, parent, 'bg-teal-100');
+        section.innerHTML += `<p class="text-gray-600">Return Type: <span class="font-semibold">${func.ret_type}</span></p>`;
+        if (func.pos) section.innerHTML += renderPosition(func.pos);
+        if (func.body) dispatchRender("body", func.body, section);
+      });
+    }
+
+    function renderBody(body, parent) {
+      const section = renderSection("Body", parent, 'bg-gray-100');
+      if (body.stmts) {
+        body.stmts.forEach(stmt => {
+          for (const [key, value] of Object.entries(stmt)) {
+            dispatchRender(key, value, section);
+          }
+        });
+      }
+    }
+
+    function renderVariableDecl(decl, parent) {
+      const section = renderSection(`Variable: ${decl.name} (${decl.type_})`, parent, 'bg-green-100');
+      if (decl.pos) section.innerHTML += renderPosition(decl.pos);
+      if (decl.assignee) dispatchRender("AssignExpression", decl.assignee, section);
+    }
+
+    function renderAssignExpression(assign, parent) {
+      const section = renderSection(`Assign to: ${assign.asignee}`, parent, 'bg-red-100');
+      if (assign.pos) section.innerHTML += renderPosition(assign.pos);
+      if (assign.value) {
+        for (const [exprType, exprValue] of Object.entries(assign.value)) {
+          dispatchRender(exprType, exprValue, section);
+        }
+      }
+    }
+
+    function renderLiteral(literal, parent) {
+      const section = renderSection(`Literal: ${literal.value} (${literal.type_})`, parent, 'bg-blue-100');
+      if (literal.pos) section.innerHTML += renderPosition(literal.pos);
+    }
+
+    function renderReturnStatement(ret, parent) {
+      const section = renderSection(`Return`, parent, 'bg-yellow-100');
+      if (ret.pos) section.innerHTML += renderPosition(ret.pos);
+      if (ret.value) {
+        for (const [exprType, exprValue] of Object.entries(ret.value)) {
+          dispatchRender(exprType, exprValue, section);
+        }
+      }
+    }
+
+    function renderVariableExpr(expr, parent) {
+      const section = renderSection(`Variable Expr: ${expr.name}`, parent, 'bg-purple-100');
+      if (expr.pos) section.innerHTML += renderPosition(expr.pos);
+    }
+
+    function renderExpression(expr, parent) {
+      for (const [innerType, innerValue] of Object.entries(expr)) {
+        dispatchRender(innerType, innerValue, parent);
+      }
+    }
+
+    function renderGeneric(data, parent) {
+      const section = renderSection(`Unknown Node`, parent, 'bg-gray-300');
+      section.innerHTML += `<pre class="text-sm">${JSON.stringify(data, null, 2)}</pre>`;
+    }
+
+    function renderSection(title, parent, bgColor) {
+      const wrapper = document.createElement('details');
+      wrapper.className = `${bgColor} rounded p-2 my-2`;
+      wrapper.open = true;
+      const summary = document.createElement('summary');
+      summary.className = "font-bold cursor-pointer";
+      summary.textContent = title;
+      wrapper.appendChild(summary);
+      parent.appendChild(wrapper);
+      return wrapper;
+    }
+
+    function renderPosition(pos) {
+      return `
+        <p class="text-xs text-gray-500">
+          Line ${pos.line}, Col ${pos.column} [${pos.range.start}-${pos.range.end}]
+          <button onclick='navigator.clipboard.writeText("${pos.line}:${pos.column}")' class="text-blue-500 hover:underline ml-2">Copy</button>
+        </p>
+      `;
+    }
+
+    function filterAST() {
+      const query = document.getElementById('search').value.toLowerCase();
+      if (!query) {
+        renderAST(fullAST);
+        return;
+      }
+      const container = document.getElementById('ast-container');
+      container.innerHTML = '';
+
+      function recursiveFilter(node, parent) {
+        if (typeof node !== 'object') return;
+        if (JSON.stringify(node).toLowerCase().includes(query)) {
+          const section = document.createElement('div');
+          section.className = "bg-white p-2 rounded shadow my-2";
+          section.innerHTML = `<pre class="text-xs">${JSON.stringify(node, null, 2)}</pre>`;
+          parent.appendChild(section);
+        }
+        if (Array.isArray(node)) {
+          node.forEach(child => recursiveFilter(child, parent));
+        } else {
+          Object.values(node).forEach(value => recursiveFilter(value, parent));
+        }
+      }
+
+      recursiveFilter(fullAST, container);
+    }
+  </script>
+</body>
+</html>
