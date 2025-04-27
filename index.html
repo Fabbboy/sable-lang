@@ -73,6 +73,7 @@
       "VariableExpression": renderVariableExpr,
       "Expression": renderExpression, // Important fix
       "BinaryExpression": renderBinaryExpression,
+      "NullExpression": renderNullExpression,
     };
 
     function renderFunctions(functions, parent) {
@@ -98,6 +99,11 @@
           }
         });
       }
+    }
+
+    function renderNullExpression(expr, parent) {
+      const section = renderSection("Null Expression", parent, 'bg-gray-200');
+      if (expr.pos) section.innerHTML += renderPosition(expr.pos);
     }
 
     function renderVariableDecl(decl, parent) {

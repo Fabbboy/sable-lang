@@ -9,12 +9,10 @@ use crate::{
   ast::{
     ast::AST,
     expression::{
-      Expression, assign_expr::AssignExpression, binary_expr::BinaryExpression,
-      block_expr::BlockExpression, literal_expr::LiteralExpression,
-      variable_expr::VariableExpression,
+      assign_expr::AssignExpression, binary_expr::BinaryExpression, block_expr::BlockExpression, literal_expr::LiteralExpression, null_expr::NullExpression, variable_expr::VariableExpression, Expression
     },
     function::{Function, FunctionParameter},
-    statement::{Statement, return_stmt::ReturnStatement, var_decl_stmt::VariableDeclStatement},
+    statement::{return_stmt::ReturnStatement, var_decl_stmt::VariableDeclStatement, Statement},
   },
   lexer::{
     lexer::Lexer,
@@ -116,7 +114,7 @@ impl<'s> Parser<'s> {
   }
 
   fn parse_factor(&mut self) -> Result<Expression<'s>, ParserError<'s>> {
-    let tok = next!(@plain self, [TokenType::Integer, TokenType::Float, TokenType::Identifier]);
+    let tok = next!(@plain self, [TokenType::Integer, TokenType::Float, TokenType::Identifier, TokenType::Null]);
     return match tok.token_type {
       TokenType::Integer | TokenType::Float => {
         let val = match tok.data {
@@ -134,6 +132,10 @@ impl<'s> Parser<'s> {
         }
         let lit = VariableExpression::new(name, tok.pos);
         Ok(Expression::VariableExpression(lit))
+      }
+      TokenType::Null => {
+        let lit = NullExpression::new(tok.pos);
+        Ok(Expression::NullExpression(lit))
       }
       _ => unreachable!(),
     };
@@ -217,7 +219,7 @@ impl<'s> Parser<'s> {
       return Ok(stmt);
     }
 
-    let tok = next!(@plain self, [TokenType::Return, TokenType::Var]);
+    let tok = next!(@plain self, [TokenType::Return, TokenType::Let]);
     return match tok.token_type {
       TokenType::Return => {
         let expr = self.parse_expression()?;
@@ -226,7 +228,7 @@ impl<'s> Parser<'s> {
         let stmt = Statement::ReturnStatement(ReturnStatement::new(expr, pos));
         Ok(stmt)
       }
-      TokenType::Var => {
+      TokenType::Let => {
         let res = self.parse_variable_declaration();
         if res.is_err() {
           return Err(res.unwrap_err());

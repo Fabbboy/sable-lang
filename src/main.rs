@@ -2,12 +2,18 @@ use ariadne::Source;
 use sable_parser::{lexer::lexer::Lexer, parser::parser::Parser};
 
 const SOURCE: &str = r#"
-func i32 main (i32 argc, i32 argv) { 
-  var i32 a = 69;
-  a = a + 1;
-  var i32 b = 420 * 4;
-  var i32 c = a + b;
-  return c;
+func i32 add(i32 x, i32 y) {
+	return x + y;
+}
+
+//or without return (works only with expressions)
+func i32 add(i32 x) {
+  x + x;
+}
+
+// no parameters also works
+func void useless() {
+	return null;
 }
 "#;
 const FILENAME: &str = "test.sbl";

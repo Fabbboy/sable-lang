@@ -16,7 +16,8 @@ pub enum TokenType {
   Type,
   Func,
   Return,
-  Var,
+  Let,
+  Null,
 
   // Operators
   Assign,

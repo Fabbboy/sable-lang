@@ -11,7 +11,9 @@ const KEYWORDS: phf::Map<&'static str, (TokenType, Option<TokenData>)> = phf_map
     "f32" => (TokenType::Type, Some(TokenData::Type(ValType::F32))),
     "func" => (TokenType::Func, None),
     "return" => (TokenType::Return, None),
-    "var" => (TokenType::Var, None),
+    "let" => (TokenType::Let, None),
+    "void" => (TokenType::Type, Some(TokenData::Type(ValType::Void))),
+    "null" => (TokenType::Null, None),
 };
 
 pub struct Lexer<'s> {
