@@ -9,10 +9,12 @@ use crate::{
   ast::{
     ast::AST,
     expression::{
-      assign_expr::AssignExpression, binary_expr::BinaryExpression, block_expr::BlockExpression, literal_expr::LiteralExpression, null_expr::NullExpression, variable_expr::VariableExpression, Expression
+      Expression, assign_expr::AssignExpression, binary_expr::BinaryExpression,
+      block_expr::BlockExpression, literal_expr::LiteralExpression, null_expr::NullExpression,
+      variable_expr::VariableExpression,
     },
     function::{Function, FunctionParameter},
-    statement::{return_stmt::ReturnStatement, var_decl_stmt::VariableDeclStatement, Statement},
+    statement::{Statement, return_stmt::ReturnStatement, var_decl_stmt::VariableDeclStatement},
   },
   lexer::{
     lexer::Lexer,
@@ -114,7 +116,7 @@ impl<'s> Parser<'s> {
   }
 
   fn parse_factor(&mut self) -> Result<Expression<'s>, ParserError<'s>> {
-    let tok = next!(@plain self, [TokenType::Integer, TokenType::Float, TokenType::Identifier, TokenType::Null]);
+    let tok = next!(@plain self, [TokenType::Integer, TokenType::Float, TokenType::Identifier, TokenType::Null, TokenType::Paren(true)]);
     return match tok.token_type {
       TokenType::Integer | TokenType::Float => {
         let val = match tok.data {
@@ -136,6 +138,11 @@ impl<'s> Parser<'s> {
       TokenType::Null => {
         let lit = NullExpression::new(tok.pos);
         Ok(Expression::NullExpression(lit))
+      }
+      TokenType::Paren(true) => {
+        let expr = self.parse_expression()?;
+        next!(@plain self, [TokenType::Paren(false)]);
+        Ok(expr)
       }
       _ => unreachable!(),
     };
@@ -277,9 +284,7 @@ impl<'s> Parser<'s> {
     }
   }
 
-  fn parse_param(
-    &mut self,
-  ) -> Result<FunctionParameter<'s>,  ParserError<'s>> {
+  fn parse_param(&mut self) -> Result<FunctionParameter<'s>, ParserError<'s>> {
     let type_ = next!(@plain self, [TokenType::Type]);
     let ty = match type_.data {
       Some(TokenData::Type(ty)) => ty,
