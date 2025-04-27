@@ -72,6 +72,7 @@
       "ReturnStatement": renderReturnStatement,
       "VariableExpression": renderVariableExpr,
       "Expression": renderExpression, // Important fix
+      "BinaryExpression": renderBinaryExpression,
     };
 
     function renderFunctions(functions, parent) {
@@ -108,6 +109,13 @@
           dispatchRender(exprType, exprValue, section);
         }
       }
+    }
+
+    function renderBinaryExpression(expr, parent) {
+      const section = renderSection(`Binary Expression: ${expr.operator}`, parent, 'bg-orange-100');
+      if (expr.pos) section.innerHTML += renderPosition(expr.pos);
+      if (expr.left) dispatchRender("Expression", expr.left, section);
+      if (expr.right) dispatchRender("Expression", expr.right, section);
     }
 
     function renderLiteral(literal, parent) {

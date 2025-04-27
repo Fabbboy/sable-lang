@@ -3,7 +3,11 @@ use sable_parser::{lexer::lexer::Lexer, parser::parser::Parser};
 
 const SOURCE: &str = r#"
 func i32 main () { 
-  1 + 2 * 3;
+  var i32 a = 69;
+  a = a + 1;
+  var i32 b = 420 * 4;
+  var i32 c = a + b;
+  return c;
 }
 "#;
 const FILENAME: &str = "test.sbl";
