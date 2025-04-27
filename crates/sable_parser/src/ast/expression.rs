@@ -4,6 +4,7 @@ pub mod literal_expr;
 pub mod block_expr;
 pub mod assign_expr;
 pub mod variable_expr;
+pub mod binary_expr;
 
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
@@ -12,6 +13,7 @@ pub enum Expression<'s> {
   BlockExpression(block_expr::BlockExpression<'s>),
   AssignExpression(assign_expr::AssignExpression<'s>),
   VariableExpression(variable_expr::VariableExpression<'s>),
+  BinaryExpression(binary_expr::BinaryExpression<'s>),
 }
 
 impl<'s> Expression<'s> {
@@ -21,6 +23,7 @@ impl<'s> Expression<'s> {
       Expression::BlockExpression(expr) => expr.get_pos(),
       Expression::AssignExpression(expr) => expr.get_pos(),
       Expression::VariableExpression(expr) => expr.get_pos(),
+      Expression::BinaryExpression(expr) => expr.get_pos(),
     }
   }
 }

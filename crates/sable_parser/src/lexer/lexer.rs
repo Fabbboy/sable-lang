@@ -2,7 +2,7 @@ use std::ops::Range;
 
 use phf::phf_map;
 
-use crate::{info::ValType, position::Position};
+use crate::{info::{OperatorType, ValType}, position::Position};
 
 use super::token::{Token, TokenData, TokenType};
 
@@ -176,13 +176,17 @@ impl<'s> Lexer<'s> {
       ',' => self.get_token(TokenType::Comma),
       ';' => self.get_token(TokenType::Semicolon),
       '=' => self.get_token(TokenType::Assign),
+      '+' => self.get_token_with_data(TokenType::Plus, Some(TokenData::Operator(OperatorType::Add))),
+      '-' => self.get_token_with_data(TokenType::Minus, Some(TokenData::Operator(OperatorType::Sub))),
+      '*' => self.get_token_with_data(TokenType::Mul, Some(TokenData::Operator(OperatorType::Mul))),
       '/' => {
-        if self.get_char() == Some('/') {
+        return if self.get_char() == Some('/') {
           self.advance();
           self.lex_comment();
-          return self.next();
-        }
-        unimplemented!("Unexpected character: {}", c);
+          self.next()
+        } else {
+          self.get_token_with_data(TokenType::Div, Some(TokenData::Operator(OperatorType::Div)))
+        };
       }
       _ => return self.get_token(TokenType::Err),
     }

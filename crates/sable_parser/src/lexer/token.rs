@@ -1,4 +1,4 @@
-use crate::{info::ValType, position::Position};
+use crate::{info::{OperatorType, ValType}, position::Position};
 
 #[derive(Debug, Clone, PartialEq, Default)]
 pub enum TokenType {
@@ -20,6 +20,10 @@ pub enum TokenType {
 
   // Operators
   Assign,
+  Plus,
+  Minus,
+  Mul,
+  Div,
 
   // Symbols
   Paren(bool),
@@ -32,6 +36,7 @@ pub enum TokenType {
 #[derive(Debug, Clone, PartialEq)]
 pub enum TokenData {
   Type(ValType),
+  Operator(OperatorType),
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]

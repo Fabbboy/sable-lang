@@ -9,8 +9,9 @@ use crate::{
   ast::{
     ast::AST,
     expression::{
-      Expression, assign_expr::AssignExpression, block_expr::BlockExpression,
-      literal_expr::LiteralExpression, variable_expr::VariableExpression,
+      Expression, assign_expr::AssignExpression, binary_expr::BinaryExpression,
+      block_expr::BlockExpression, literal_expr::LiteralExpression,
+      variable_expr::VariableExpression,
     },
     function::Function,
     statement::{Statement, return_stmt::ReturnStatement, var_decl_stmt::VariableDeclStatement},
@@ -140,11 +141,37 @@ impl<'s> Parser<'s> {
 
   fn parse_term(&mut self) -> Result<Expression<'s>, ParserError<'s>> {
     let lhs = self.parse_factor()?;
+
+    if self.peek(smallvec![TokenType::Mul, TokenType::Div]) {
+      let tok = next!(@plain self, [TokenType::Mul, TokenType::Div]);
+      let operator = match tok.data {
+        Some(TokenData::Operator(op)) => op,
+        _ => unreachable!(),
+      };
+      let rhs = self.parse_term()?;
+      let pos = tok.pos.merge(rhs.get_pos());
+      let expr = Expression::BinaryExpression(BinaryExpression::new(lhs, operator, rhs, pos));
+      return Ok(expr);
+    }
+
     return Ok(lhs);
   }
 
   fn parse_expression(&mut self) -> Result<Expression<'s>, ParserError<'s>> {
     let lhs = self.parse_term()?;
+
+    if self.peek(smallvec![TokenType::Plus, TokenType::Minus]) {
+      let tok = next!(@plain self, [TokenType::Plus, TokenType::Minus]);
+      let operator = match tok.data {
+        Some(TokenData::Operator(op)) => op,
+        _ => unreachable!(),
+      };
+      let rhs = self.parse_expression()?;
+      let pos = tok.pos.merge(rhs.get_pos());
+      let expr = Expression::BinaryExpression(BinaryExpression::new(lhs, operator, rhs, pos));
+      return Ok(expr);
+    }
+
     return Ok(lhs);
   }
 

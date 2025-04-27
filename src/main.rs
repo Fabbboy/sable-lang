@@ -3,13 +3,7 @@ use sable_parser::{lexer::lexer::Lexer, parser::parser::Parser};
 
 const SOURCE: &str = r#"
 func i32 main () { 
-   // you can declare variables without initializing them
-   var i32 counter;
-   // or redeclare them
-   // you can also just declare them with initializer
-   var i32 counter = 123;
-   counter = 123;
-   return counter;
+  1 + 2 * 3;
 }
 "#;
 const FILENAME: &str = "test.sbl";
