@@ -2,11 +2,13 @@ use crate::position::Position;
 
 pub mod literal_expr;
 pub mod block_expr;
+pub mod assign_expr;
 
 #[derive(Debug)]
 pub enum Expression<'s> {
   LiteralExpression(literal_expr::LiteralExpression<'s>),
   BlockExpression(block_expr::BlockExpression<'s>),
+  AssignExpression(assign_expr::AssignExpression<'s>),
 }
 
 impl<'s> Expression<'s> {
@@ -14,6 +16,7 @@ impl<'s> Expression<'s> {
     match self {
       Expression::LiteralExpression(expr) => expr.get_pos(),
       Expression::BlockExpression(expr) => expr.get_pos(),
+      Expression::AssignExpression(expr) => expr.get_pos(),
     }
   }
 }

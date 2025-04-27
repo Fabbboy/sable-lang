@@ -15,4 +15,14 @@ impl Position {
       range,
     }
   }
+
+  pub fn merge(&self, other: Position) -> Self {
+    let start = self.range.start.min(other.range.start);
+    let end = self.range.end.max(other.range.end);
+    Self {
+      line: self.line,
+      column: self.column,
+      range: start..end,
+    }
+  }
 }

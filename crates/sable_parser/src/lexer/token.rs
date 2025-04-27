@@ -16,6 +16,10 @@ pub enum TokenType {
   Type,
   Func,
   Return,
+  Var,
+
+  // Operators
+  Assign,
 
   // Symbols
   Paren(bool),

@@ -8,9 +8,12 @@ use smallvec::{SmallVec, smallvec};
 use crate::{
   ast::{
     ast::AST,
-    expression::{Expression, block_expr::BlockExpression, literal_expr::LiteralExpression},
+    expression::{
+      Expression, assign_expr::AssignExpression, block_expr::BlockExpression,
+      literal_expr::LiteralExpression,
+    },
     function::Function,
-    statement::{Statement, return_stmt::ReturnStatement},
+    statement::{Statement, return_stmt::ReturnStatement, var_decl_stmt::VariableDeclStatement},
   },
   lexer::{
     lexer::Lexer,
@@ -104,8 +107,15 @@ impl<'s> Parser<'s> {
     }
   }
 
+  fn parse_assign(&mut self, name: &'s str) -> Result<AssignExpression<'s>, ParserError<'s>> {
+    let tok = next!(@plain self, [TokenType::Assign]);
+    let expr = self.parse_expression()?;
+    let pos = tok.pos.merge(expr.get_pos());
+    Ok(AssignExpression::new(name, expr, pos))
+  }
+
   fn parse_factor(&mut self) -> Result<Expression<'s>, ParserError<'s>> {
-    let tok = next!(@plain self, [TokenType::Integer, TokenType::Float]);
+    let tok = next!(@plain self, [TokenType::Integer, TokenType::Float, TokenType::Identifier]);
     return match tok.token_type {
       TokenType::Integer | TokenType::Float => {
         let val = match tok.data {
@@ -114,6 +124,14 @@ impl<'s> Parser<'s> {
         };
         let lit = LiteralExpression::new(tok.lexeme, val, tok.pos);
         Ok(Expression::LiteralExpression(lit))
+      }
+      TokenType::Identifier => {
+        let name = tok.lexeme;
+        if self.peek(smallvec![TokenType::Assign]) {
+          let expr = self.parse_assign(name)?;
+          return Ok(Expression::AssignExpression(expr));
+        }
+        unimplemented!("Identifier: {}", name);
       }
       _ => unreachable!(),
     };
@@ -129,6 +147,36 @@ impl<'s> Parser<'s> {
     return Ok(lhs);
   }
 
+  fn parse_variable_declaration(&mut self) -> Result<VariableDeclStatement<'s>, ParserError<'s>> {
+    let type_ = next!(@plain self, [TokenType::Type]);
+    let ty = match type_.data {
+      Some(TokenData::Type(ty)) => ty,
+      _ => unreachable!(),
+    };
+
+    let name = next!(@plain self, [TokenType::Identifier]);
+    if self.peek(smallvec![TokenType::Semicolon]) {
+      next!(@plain self, [TokenType::Semicolon]);
+      let pos = type_.pos.merge(name.pos);
+      let var_decl = VariableDeclStatement::new(ty, name.lexeme, None, pos);
+      return Ok(var_decl);
+    }
+
+    if self.peek(smallvec![TokenType::Assign]) {
+      let expr = self.parse_assign(name.lexeme)?;
+      let pos = type_.pos.merge(name.pos).merge(expr.get_pos());
+      let var_decl = VariableDeclStatement::new(ty, name.lexeme, Some(expr), pos);
+      next!(@plain self, [TokenType::Semicolon]);
+      return Ok(var_decl);
+    }
+
+    let tok_res = self.next(smallvec![TokenType::Semicolon, TokenType::Comma]);
+    if tok_res.is_ok() {
+      unreachable!()
+    }
+    return Err(tok_res.unwrap_err());
+  }
+
   fn parse_statement(&mut self) -> Result<Statement<'s>, ParserError<'s>> {
     if self.peek(smallvec![TokenType::Integer, TokenType::Float]) {
       let expr = self.parse_expression()?;
@@ -137,15 +185,24 @@ impl<'s> Parser<'s> {
       return Ok(stmt);
     }
 
-    let tok = next!(@plain self, [TokenType::Return]);
-    let mut pos = tok.pos;
+    let tok = next!(@plain self, [TokenType::Return, TokenType::Var]);
+    let pos = tok.pos;
     return match tok.token_type {
       TokenType::Return => {
         let expr = self.parse_expression()?;
-        pos.range.end = expr.get_pos().range.end;
+        let pos = pos.merge(expr.get_pos());
         next!(@plain self, [TokenType::Semicolon]);
         let stmt = Statement::ReturnStatement(ReturnStatement::new(expr, pos));
         Ok(stmt)
+      }
+      TokenType::Var => {
+        let res = self.parse_variable_declaration();
+        if res.is_err() {
+          return Err(res.unwrap_err());
+        }
+
+        let var_decl = res.unwrap();
+        Ok(Statement::VariableDeclStatement(var_decl))
       }
       _ => unreachable!(),
     };
@@ -165,7 +222,7 @@ impl<'s> Parser<'s> {
         Ok(stmt) => {
           let stmt_pos = stmt.get_pos();
           match &mut pos {
-            Some(p) => p.range.end = stmt_pos.range.end,
+            Some(p) => *p = p.merge(stmt_pos),
             None => pos = Some(stmt_pos),
           }
           statements.push(stmt);
@@ -193,7 +250,7 @@ impl<'s> Parser<'s> {
       Some(TokenData::Type(ty)) => ty,
       _ => unreachable!(),
     };
-    let mut ty_pos = type_.pos;
+    let ty_pos = type_.pos;
     let name = next!(@vec self, [TokenType::Identifier]);
     next!(@vec self, [TokenType::Paren(true)]);
     next!(@vec self, [TokenType::Paren(false)]);
@@ -206,7 +263,7 @@ impl<'s> Parser<'s> {
 
     next!(@vec self, [TokenType::Brace(false)]);
 
-    ty_pos.range.end = name.pos.range.end;
+    let ty_pos = ty_pos.merge(name.pos);
     Ok(Function::new(name.lexeme, ty_pos, ret_ty, body))
   }
 

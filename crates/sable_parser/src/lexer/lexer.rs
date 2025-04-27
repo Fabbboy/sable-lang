@@ -11,6 +11,7 @@ const KEYWORDS: phf::Map<&'static str, (TokenType, Option<TokenData>)> = phf_map
     "f32" => (TokenType::Type, Some(TokenData::Type(ValType::F32))),
     "func" => (TokenType::Func, None),
     "return" => (TokenType::Return, None),
+    "var" => (TokenType::Var, None),
 };
 
 pub struct Lexer<'s> {
@@ -146,7 +147,7 @@ impl<'s> Lexer<'s> {
   fn lex_comment(&mut self) {
     while let Some(c) = self.get_char() {
       if c != '\n' {
-       self.advance();
+        self.advance();
       } else {
         break;
       }
@@ -174,6 +175,7 @@ impl<'s> Lexer<'s> {
       ':' => self.get_token(TokenType::Colon),
       ',' => self.get_token(TokenType::Comma),
       ';' => self.get_token(TokenType::Semicolon),
+      '=' => self.get_token(TokenType::Assign),
       '/' => {
         if self.get_char() == Some('/') {
           self.advance();
