@@ -126,6 +126,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "sable_sema"
+version = "0.1.0"
+dependencies = [
+ "sable_parser",
+]
+
+[[package]]
 name = "serde"
 version = "1.0.219"
 source = "registry+https://github.com/rust-lang/crates.io-index"

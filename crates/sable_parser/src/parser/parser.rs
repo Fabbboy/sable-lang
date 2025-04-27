@@ -14,7 +14,7 @@ use crate::{
       variable_expr::VariableExpression,
     },
     function::{Function, FunctionParameter},
-    statement::{Statement, return_stmt::ReturnStatement, var_decl_stmt::VariableDeclStatement},
+    statement::{Statement, return_stmt::ReturnStatement, let_stmt::LetStatement},
   },
   lexer::{
     lexer::Lexer,
@@ -184,7 +184,7 @@ impl<'s> Parser<'s> {
     return Ok(lhs);
   }
 
-  fn parse_variable_declaration(&mut self) -> Result<VariableDeclStatement<'s>, ParserError<'s>> {
+  fn parse_variable_declaration(&mut self) -> Result<LetStatement<'s>, ParserError<'s>> {
     let type_ = next!(@plain self, [TokenType::Type]);
     let ty = match type_.data {
       Some(TokenData::Type(ty)) => ty,
@@ -195,14 +195,14 @@ impl<'s> Parser<'s> {
     if self.peek(smallvec![TokenType::Semicolon]) {
       next!(@plain self, [TokenType::Semicolon]);
       let pos = type_.pos.merge(name.pos);
-      let var_decl = VariableDeclStatement::new(ty, name.lexeme, None, pos);
+      let var_decl = LetStatement::new(ty, name.lexeme, None, pos);
       return Ok(var_decl);
     }
 
     if self.peek(smallvec![TokenType::Assign]) {
       let expr = self.parse_assign(name.lexeme)?;
       let pos = type_.pos.merge(name.pos).merge(expr.get_pos());
-      let var_decl = VariableDeclStatement::new(ty, name.lexeme, Some(expr), pos);
+      let var_decl = LetStatement::new(ty, name.lexeme, Some(expr), pos);
       next!(@plain self, [TokenType::Semicolon]);
       return Ok(var_decl);
     }
@@ -242,7 +242,7 @@ impl<'s> Parser<'s> {
         }
 
         let var_decl = res.unwrap();
-        Ok(Statement::VariableDeclStatement(var_decl))
+        Ok(Statement::LetStatement(var_decl))
       }
       _ => unreachable!(),
     };

@@ -2,14 +2,14 @@ use crate::{ast::expression::assign_expr::AssignExpression, info::ValType, posit
 
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
-pub struct VariableDeclStatement<'s> {
+pub struct LetStatement<'s> {
   type_: ValType,
   name: &'s str,
   assignee: Option<AssignExpression<'s>>,
   pos: Position,
 }
 
-impl<'s> VariableDeclStatement<'s> {
+impl<'s> LetStatement<'s> {
   pub fn new(
     type_: ValType,
     name: &'s str,

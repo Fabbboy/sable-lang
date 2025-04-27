@@ -3,6 +3,7 @@ use sable_parser::{lexer::lexer::Lexer, parser::parser::Parser};
 
 const SOURCE: &str = r#"
 func i32 add(i32 x, i32 y) {
+  let i32 x = 123;
 	return (x + y) * 2;
 }
 "#;

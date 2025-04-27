@@ -66,7 +66,7 @@
     const handlers = {
       "functions": renderFunctions,
       "body": renderBody,
-      "VariableDeclStatement": renderVariableDecl,
+      "LetStatement": renderLetStmt,
       "AssignExpression": renderAssignExpression,
       "LiteralExpression": renderLiteral,
       "ReturnStatement": renderReturnStatement,
@@ -106,7 +106,7 @@
       if (expr.pos) section.innerHTML += renderPosition(expr.pos);
     }
 
-    function renderVariableDecl(decl, parent) {
+    function renderLetStmt(decl, parent) {
       const section = renderSection(`Variable: ${decl.name} (${decl.type_})`, parent, 'bg-green-100');
       if (decl.pos) section.innerHTML += renderPosition(decl.pos);
       if (decl.assignee) dispatchRender("AssignExpression", decl.assignee, section);
