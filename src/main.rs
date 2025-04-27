@@ -2,7 +2,7 @@ use ariadne::Source;
 use sable_parser::{lexer::lexer::Lexer, parser::parser::Parser};
 
 const SOURCE: &str = r#"
-func i32 main () { 
+func i32 main (i32 argc, i32 argv) { 
   var i32 a = 69;
   a = a + 1;
   var i32 b = 420 * 4;

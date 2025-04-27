@@ -78,6 +78,11 @@
     function renderFunctions(functions, parent) {
       functions.forEach(func => {
         const section = renderSection(`Function: ${func.name}`, parent, 'bg-teal-100');
+        if (func.params) {
+          func.params.forEach(param => {
+            section.innerHTML += `<p class="text-gray-600">Param: <span class="font-semibold">${param.name} (${param.type_})</span></p>`;
+          });
+        }
         section.innerHTML += `<p class="text-gray-600">Return Type: <span class="font-semibold">${func.ret_type}</span></p>`;
         if (func.pos) section.innerHTML += renderPosition(func.pos);
         if (func.body) dispatchRender("body", func.body, section);

@@ -13,7 +13,7 @@ use crate::{
       block_expr::BlockExpression, literal_expr::LiteralExpression,
       variable_expr::VariableExpression,
     },
-    function::Function,
+    function::{Function, FunctionParameter},
     statement::{Statement, return_stmt::ReturnStatement, var_decl_stmt::VariableDeclStatement},
   },
   lexer::{
@@ -275,6 +275,19 @@ impl<'s> Parser<'s> {
     }
   }
 
+  fn parse_param(
+    &mut self,
+  ) -> Result<FunctionParameter<'s>,  ParserError<'s>> {
+    let type_ = next!(@plain self, [TokenType::Type]);
+    let ty = match type_.data {
+      Some(TokenData::Type(ty)) => ty,
+      _ => unreachable!(),
+    };
+    let name = next!(@plain self, [TokenType::Identifier]);
+    let pos = type_.pos.merge(name.pos);
+    Ok(FunctionParameter::new(name.lexeme, pos, ty))
+  }
+
   fn parse_function(&mut self) -> Result<Function<'s>, SmallVec<[ParserError<'s>; MAX_EXPECTED]>> {
     let type_ = next!(@vec self, [TokenType::Type]);
     let ret_ty = match type_.data {
@@ -284,6 +297,18 @@ impl<'s> Parser<'s> {
     let ty_pos = type_.pos;
     let name = next!(@vec self, [TokenType::Identifier]);
     next!(@vec self, [TokenType::Paren(true)]);
+    let mut params = Vec::new();
+    while !self.peek(smallvec![TokenType::Paren(false)]) {
+      let param = self.parse_param();
+      if param.is_err() {
+        return Err(smallvec![param.unwrap_err()]);
+      }
+      let param = param.unwrap();
+      params.push(param);
+      if self.peek(smallvec![TokenType::Comma]) {
+        next!(@vec self, [TokenType::Comma]);
+      }
+    }
     next!(@vec self, [TokenType::Paren(false)]);
     next!(@vec self, [TokenType::Brace(true)]);
     let body = self.parse_body();
@@ -295,7 +320,7 @@ impl<'s> Parser<'s> {
     next!(@vec self, [TokenType::Brace(false)]);
 
     let ty_pos = ty_pos.merge(name.pos);
-    Ok(Function::new(name.lexeme, ty_pos, ret_ty, body))
+    Ok(Function::new(name.lexeme, params, ty_pos, ret_ty, body))
   }
 
   pub fn parse(&mut self) -> Result<Ref<AST>, &[ParserError<'s>]> {
