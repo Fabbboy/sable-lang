@@ -330,7 +330,11 @@ impl<'s> Parser<'s> {
     Ok(Function::new(name.lexeme, params, ty_pos, ret_ty, body))
   }
 
-  pub fn parse(&mut self) -> Result<Ref<AST>, &[ParserError<'s>]> {
+  pub fn get_ast(&self) -> Rc<RefCell<AST<'s>>> {
+    self.ast.clone()
+  }
+
+  pub fn parse(&mut self) -> Result<Rc<RefCell<AST<'s>>>, &[ParserError<'s>]> {
     loop {
       let tok = self.next(smallvec![TokenType::Func, TokenType::Eof]);
       if tok.is_err() {
@@ -362,7 +366,7 @@ impl<'s> Parser<'s> {
       return Err(&self.errs);
     }
 
-    Ok(self.ast.borrow())
+    Ok(self.ast.clone())
   }
 }
 

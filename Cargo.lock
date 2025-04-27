@@ -111,6 +111,7 @@ version = "0.1.0"
 dependencies = [
  "ariadne",
  "sable_parser",
+ "sable_sema",
  "serde_json",
  "smallvec",
 ]
@@ -129,6 +130,7 @@ dependencies = [
 name = "sable_sema"
 version = "0.1.0"
 dependencies = [
+ "ariadne",
  "sable_parser",
 ]
 
