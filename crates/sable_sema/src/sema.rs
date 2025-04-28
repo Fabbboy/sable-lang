@@ -97,7 +97,7 @@ impl<'s> Sema<'s> {
     };
   }
 
-  pub fn analyze(&mut self) -> Result<(), Vec<AnalyzerError<'s>>> {
+  pub fn analyze(&mut self) -> Result<(), &Vec<AnalyzerError<'s>>> {
     let func_entries: Vec<(usize, Rc<Function<'s>>)> = {
       let ast_ref = self.ast.borrow();
       ast_ref
@@ -118,7 +118,7 @@ impl<'s> Sema<'s> {
     if self.errors.is_empty() {
       Ok(())
     } else {
-      Err(std::mem::take(&mut self.errors))
+      Err(&self.errors)
     }
   }
 }
