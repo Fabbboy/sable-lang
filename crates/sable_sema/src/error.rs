@@ -1,5 +1,6 @@
 use sable_parser::parser::error::ParseErrReport;
 
+pub mod func_checks;
 pub mod expr_errs;
 pub mod func_already_defined;
 pub mod var_redeclared;
@@ -12,6 +13,7 @@ pub enum AnalyzerError<'s> {
   FunctionAlreadyDefined(func_already_defined::FunctionAlreadyDefined<'s>),
   VariableRedeclared(var_redeclared::VariableRedeclared<'s>),
   ExprError(expr_errs::SemaExprError<'s>),
+  FuncError(func_checks::FunctionCheckError<'s>),
 }
 
 impl<'s> AnalyzerError<'s> {
@@ -20,6 +22,7 @@ impl<'s> AnalyzerError<'s> {
       AnalyzerError::FunctionAlreadyDefined(err) => err.report(filename),
       AnalyzerError::VariableRedeclared(err) => err.report(filename),
       AnalyzerError::ExprError(err) => err.report(filename),
+      AnalyzerError::FuncError(err) => err.report(filename),
     }
   }
 }

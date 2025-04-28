@@ -2,7 +2,8 @@ use std::rc::Rc;
 
 use sable_parser::ast::{
   expression::{
-    AssignExpression, BinaryExpression, BlockExpression, Expression, VariableExpression,
+    AssignExpression, BinaryExpression, BlockExpression, CallExpression, Expression,
+    VariableExpression,
   },
   function::Function,
 };
@@ -11,7 +12,8 @@ use crate::{
   checks::inference::infer_expr,
   error::{
     AnalyzerError,
-    expr_errs::{FunctionNotFound, SemaExprError, TypeMismatch, VariableNotFound},
+    expr_errs::{SemaExprError, TypeMismatch, VariableNotFound},
+    func_checks::{FunctionArgumentMismatch, FunctionCheckError, FunctionNotFound},
   },
   sema::Sema,
 };
@@ -46,18 +48,48 @@ pub fn check_expr<'s>(
 
 pub fn check_call_expression<'s>(
   analyzer: &mut Sema<'s>,
-  call_expression: &sable_parser::ast::expression::CallExpression<'s>,
+  call_expression: &CallExpression<'s>,
   f: Rc<Function<'s>>,
 ) -> Result<(), AnalyzerError<'s>> {
   let name = call_expression.get_callee();
   let func_idx = analyzer.funcs.get(name);
   if func_idx.is_none() {
-    return Err(AnalyzerError::ExprError(SemaExprError::FunctionNotFound(
-      FunctionNotFound::new(name, call_expression.get_pos().clone()),
-    )));
+    return Err(AnalyzerError::FuncError(
+      FunctionCheckError::FunctionNotFound(FunctionNotFound::new(
+        name,
+        call_expression.get_pos().clone(),
+      )),
+    ));
   }
 
   let func = analyzer.get_func(*func_idx.unwrap());
+  let args = call_expression.get_args();
+  let params = func.get_params();
+
+  if args.len() != params.len() {
+    return Err(AnalyzerError::FuncError(
+      FunctionCheckError::FunctionArgumentMismatch(FunctionArgumentMismatch::new(
+        func.get_name(),
+        params.len(),
+        args.len(),
+        call_expression.get_pos().clone(),
+      )),
+    ));
+  }
+
+  for (i, arg) in args.iter().enumerate() {
+    let res = check_expr(analyzer, arg, f.clone());
+    if res.is_err() {
+      return res;
+    }
+    let arg_type = infer_expr(analyzer, arg);
+    let param_type = params[i].get_val_type();
+    if arg_type != param_type {
+      return Err(AnalyzerError::ExprError(SemaExprError::TypeMismatch(
+        TypeMismatch::new(param_type.clone(), arg_type, arg.get_pos().clone()),
+      )));
+    }
+  }
 
   Ok(())
 }
