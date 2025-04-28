@@ -1,22 +1,25 @@
-use std::{collections::HashMap, rc::Rc};
+use std::collections::HashMap;
 
-use sable_parser::{ast::function::Function, position::Position};
+use sable_parser::{info::ValType, position::Position};
 
-pub enum NamendValue {
-  LetStmt(usize),
+pub struct NamendValue {
+  val_type: ValType,
+  position: Position,
 }
 
 impl NamendValue {
-  pub fn get_pos<'s>(&self, f: Rc<Function<'s>>) -> Position {
-    match self {
-      NamendValue::LetStmt(idx) => {
-        let let_stmt = f.get_body().get_at(*idx).unwrap();
-        let_stmt.get_pos().clone()
-      }
-    }
+  pub fn new(val_type: ValType, position: Position) -> Self {
+    Self { val_type, position }
+  }
+
+  pub fn get_pos(&self) -> &Position {
+    &self.position
+  }
+
+  pub fn get_type(&self) -> &ValType {
+    &self.val_type
   }
 }
-
 pub struct Scope<'s> {
   variables: HashMap<&'s str, NamendValue>,
 }

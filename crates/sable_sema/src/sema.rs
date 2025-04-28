@@ -37,12 +37,7 @@ impl<'s> Sema<'s> {
     ast.get_funcs()[idx].clone()
   }
 
-  fn check_let(
-    &mut self,
-    let_statement: &LetStatement<'s>,
-    i: usize,
-    f: Rc<Function<'s>>,
-  ) -> Result<(), AnalyzerError<'s>> {
+  fn check_let(&mut self, let_statement: &LetStatement<'s>) -> Result<(), AnalyzerError<'s>> {
     let name = let_statement.get_name();
     if self.resolver.is_declared(name) {
       let earlier = match self.resolver.resolve_var(name) {
@@ -55,11 +50,14 @@ impl<'s> Sema<'s> {
       return Err(AnalyzerError::VariableRedeclared(VariableRedeclared::new(
         name,
         let_statement.get_pos().clone(),
-        earlier.get_pos(f).clone(),
+        earlier.get_pos().clone(),
       )));
     }
 
-    let namend = NamendValue::LetStmt(i);
+    let namend = NamendValue::new(
+      let_statement.get_type().clone(),
+      let_statement.get_pos().clone(),
+    );
 
     if let_statement.get_assignee().is_some() {
       let assignee = let_statement.get_assignee().as_ref().unwrap();
@@ -76,12 +74,7 @@ impl<'s> Sema<'s> {
     Ok(())
   }
 
-  fn check_statement(
-    &mut self,
-    stmt: &Statement<'s>,
-    i: usize,
-    f: Rc<Function<'s>>,
-  ) -> Result<(), AnalyzerError<'s>> {
+  fn check_statement(&mut self, stmt: &Statement<'s>) -> Result<(), AnalyzerError<'s>> {
     match stmt {
       Statement::Expression(expression) => {
         let checked = check_expr(self, expression);
@@ -90,20 +83,16 @@ impl<'s> Sema<'s> {
           Err(err) => Err(err),
         }
       }
-      Statement::ReturnStatement(return_statement) => Ok(()),
-      Statement::LetStatement(let_statement) => self.check_let(let_statement, i, f),
+      Statement::ReturnStatement(_) => Ok(()),
+      Statement::LetStatement(let_statement) => self.check_let(let_statement),
     }
   }
 
-  fn check_block<'f>(
-    &mut self,
-    block: &BlockExpression<'s>,
-    f: Rc<Function<'s>>,
-  ) -> Result<(), Vec<AnalyzerError<'s>>> {
+  fn check_block<'f>(&mut self, block: &BlockExpression<'s>) -> Result<(), Vec<AnalyzerError<'s>>> {
     let mut errors = Vec::new();
     self.resolver.enter_scope();
-    for (i, stmt) in block.get_stmts().iter().enumerate() {
-      match self.check_statement(stmt, i, f.clone()) {
+    for (_, stmt) in block.get_stmts().iter().enumerate() {
+      match self.check_statement(stmt) {
         Ok(_) => {}
         Err(err) => errors.push(err),
       }
@@ -135,7 +124,7 @@ impl<'s> Sema<'s> {
     }
 
     let block = f.get_body();
-    let res = self.check_block(block, f.clone());
+    let res = self.check_block(block);
 
     return match res {
       Ok(_) => {

@@ -1,5 +1,5 @@
 use ariadne::{Color, Label, Report, ReportKind};
-use sable_parser::{parser::error::ParseErrReport, position::Position};
+use sable_parser::{info::ValType, parser::error::ParseErrReport, position::Position};
 
 pub struct VariableNotFound<'s> {
   name: &'s str,
@@ -31,14 +31,42 @@ impl<'s> VariableNotFound<'s> {
   }
 }
 
+pub struct TypeMismatch {
+  lhs: ValType,
+  rhs: ValType,
+  pos: Position,
+}
+
+impl TypeMismatch {
+  pub fn new(lhs: ValType, rhs: ValType, pos: Position) -> Self {
+    Self { lhs, rhs, pos }
+  }
+
+  pub fn report<'f>(&self, filename: &'f str) -> ParseErrReport<'f> {
+    Report::build(ReportKind::Error, (filename, self.pos.range.clone()))
+      .with_message(format!(
+        "type mismatch: expected `{}`, found `{}`",
+        self.lhs, self.rhs
+      ))
+      .with_label(
+        Label::new((filename, self.pos.range.clone()))
+          .with_message("mismatch here")
+          .with_color(Color::Yellow),
+      )
+      .finish()
+  }
+}
+
 pub enum SemaExprError<'s> {
   VariableNotFound(VariableNotFound<'s>),
+  TypeMismatch(TypeMismatch),
 }
 
 impl<'s> SemaExprError<'s> {
   pub fn report(&self, filename: &'s str) -> ParseErrReport<'s> {
     match self {
       SemaExprError::VariableNotFound(err) => err.report(filename),
+      SemaExprError::TypeMismatch(err) => err.report(filename),
     }
   }
 }
