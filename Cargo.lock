@@ -117,8 +117,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "sable_hir"
+name = "sable_mir"
 version = "0.1.0"
+dependencies = [
+ "sable_parser",
+]
 
 [[package]]
 name = "sable_parser"

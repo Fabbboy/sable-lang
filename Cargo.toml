@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [workspace]
-members = [ "crates/sable_hir","crates/sable_parser", "crates/sable_sema"]
+members = [ "crates/sable_mir","crates/sable_parser", "crates/sable_sema"]
 resolver = "3"
 
 [workspace.dependencies]
@@ -14,6 +14,7 @@ smallvec = "1.15.0"
 serde = { version = "1.0.219" }
 sable_parser = { path = "crates/sable_parser" }
 sable_sema = { path = "crates/sable_sema" }
+sable_mir = { path = "crates/sable_mir" }
 
 [dependencies]
 sable_parser = { workspace = true, features = ["serde"] }
