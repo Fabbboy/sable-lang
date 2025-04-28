@@ -2,12 +2,10 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
   checks::stmt_check::check_stmt,
-  error::{AnalyzerError, func_already_defined::FunctionAlreadyDefined},
-  resolver::Resolver,
+  error::{func_already_defined::FunctionAlreadyDefined, AnalyzerError},
+  resolver::Resolver, scope::NamendValue,
 };
-use sable_parser::ast::{
-  ast::AST, expression::BlockExpression, function::Function,
-};
+use sable_parser::ast::{ast::AST, expression::BlockExpression, function::Function};
 
 pub struct Sema<'s> {
   errors: Vec<AnalyzerError<'s>>,
@@ -37,7 +35,6 @@ impl<'s> Sema<'s> {
     f: Rc<Function<'s>>,
   ) -> Result<(), Vec<AnalyzerError<'s>>> {
     let mut errors = Vec::new();
-    self.resolver.enter_scope();
     for (_, stmt) in block.get_stmts().iter().enumerate() {
       match check_stmt(self, stmt, f.clone()) {
         Ok(_) => {}
@@ -45,7 +42,6 @@ impl<'s> Sema<'s> {
       }
     }
 
-    self.resolver.exit_scope();
     if errors.is_empty() {
       Ok(())
     } else {
@@ -70,8 +66,19 @@ impl<'s> Sema<'s> {
       )]);
     }
 
+    self.resolver.enter_scope();
+    for arg in f.get_params() {
+      let namend = NamendValue::new(
+        arg.get_val_type().clone(),
+        arg.get_pos().clone(),
+      );
+      self.resolver.define_var(arg.get_name(),  namend);
+    }
+
     let block = f.get_body();
     let res = self.check_block(block, f.clone());
+
+    self.resolver.exit_scope();
 
     return match res {
       Ok(_) => {
