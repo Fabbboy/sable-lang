@@ -4,7 +4,7 @@ use sable_sema::sema::Sema;
 
 const SOURCE: &str = r#"
 func i32 add(i32 x, i32 y) {
- let i32 x = 123;
+ let i32 x = 1;
   let i32 y = 2;
 }
 "#;
