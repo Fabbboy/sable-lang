@@ -31,25 +31,33 @@ impl<'s> Sema<'s> {
     ast.get_funcs()[idx].clone()
   }
 
-  fn check_statement(&mut self, stmt: &Statement<'s>) -> Result<(), AnalyzerError<'s>> {
+  fn check_statement(
+    &mut self,
+    stmt: &Statement<'s>,
+    f: Rc<Function<'s>>,
+  ) -> Result<(), AnalyzerError<'s>> {
     match stmt {
       Statement::Expression(expression) => {
-        let checked = check_expr(self, expression);
+        let checked = check_expr(self, expression, f.clone());
         match checked {
           Ok(_) => Ok(()),
           Err(err) => Err(err),
         }
       }
       Statement::ReturnStatement(_) => Ok(()),
-      Statement::LetStatement(let_statement) => check_let_stmt(self, let_statement),
+      Statement::LetStatement(let_statement) => check_let_stmt(self, let_statement, f.clone()),
     }
   }
 
-  fn check_block<'f>(&mut self, block: &BlockExpression<'s>) -> Result<(), Vec<AnalyzerError<'s>>> {
+  fn check_block<'f>(
+    &mut self,
+    block: &BlockExpression<'s>,
+    f: Rc<Function<'s>>,
+  ) -> Result<(), Vec<AnalyzerError<'s>>> {
     let mut errors = Vec::new();
     self.resolver.enter_scope();
     for (_, stmt) in block.get_stmts().iter().enumerate() {
-      match self.check_statement(stmt) {
+      match self.check_statement(stmt, f.clone()) {
         Ok(_) => {}
         Err(err) => errors.push(err),
       }
@@ -81,7 +89,7 @@ impl<'s> Sema<'s> {
     }
 
     let block = f.get_body();
-    let res = self.check_block(block);
+    let res = self.check_block(block, f.clone());
 
     return match res {
       Ok(_) => {

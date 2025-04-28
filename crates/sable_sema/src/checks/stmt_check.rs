@@ -1,5 +1,10 @@
+use std::rc::Rc;
+
 use sable_parser::{
-  ast::statement::{LetStatement, Statement},
+  ast::{
+    function::Function,
+    statement::{LetStatement, Statement},
+  },
   info::ValType,
 };
 
@@ -17,17 +22,27 @@ use super::{expr_check::check_expr, inference::infer_expr};
 pub fn check_stmt<'s>(
   analyzer: &mut Sema<'s>,
   stmt: &Statement<'s>,
+  f: Rc<Function<'s>>,
 ) -> Result<(), AnalyzerError<'s>> {
   match stmt {
-    Statement::Expression(expression) => check_expr(analyzer, expression),
+    Statement::Expression(expression) => check_expr(analyzer, expression, f),
     Statement::ReturnStatement(_) => Ok(()),
-    Statement::LetStatement(let_statement) => check_let_stmt(analyzer, let_statement),
+    Statement::LetStatement(let_statement) => check_let_stmt(analyzer, let_statement, f),
   }
+}
+
+pub fn check_ret_stmt<'s>(
+  analyzer: &mut Sema<'s>,
+  ret_statement: &sable_parser::ast::statement::ReturnStatement<'s>,
+  f: Rc<Function<'s>>,
+) -> Result<(), AnalyzerError<'s>> {
+  todo!()
 }
 
 pub fn check_let_stmt<'s>(
   analyzer: &mut Sema<'s>,
   let_statement: &LetStatement<'s>,
+  f: Rc<Function<'s>>,
 ) -> Result<(), AnalyzerError<'s>> {
   let name = let_statement.get_name();
   if analyzer.resolver.is_declared(name) {
@@ -46,7 +61,7 @@ pub fn check_let_stmt<'s>(
   }
 
   if let Some(assignee) = let_statement.get_assignee() {
-    check_expr(analyzer, assignee.get_value())?;
+    check_expr(analyzer, assignee.get_value(), f)?;
     let val_type = infer_expr(analyzer, assignee.get_value());
     if val_type == ValType::Void || val_type == ValType::Untyped {
       return Err(AnalyzerError::ExprError(SemaExprError::IllegalNullVoid(
