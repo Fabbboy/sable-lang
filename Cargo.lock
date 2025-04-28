@@ -114,15 +114,16 @@ dependencies = [
  "sable_parser",
  "sable_sema",
  "serde_json",
- "smallvec",
 ]
 
 [[package]]
 name = "sable_mir"
 version = "0.1.0"
 dependencies = [
+ "ariadne",
  "sable_parser",
  "serde",
+ "smallvec",
 ]
 
 [[package]]
@@ -186,6 +187,9 @@ name = "smallvec"
 version = "1.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8917285742e9f3e1683f0a9c4e6b57960b7314d0b08d30d1ecd426713ee2eee9"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "syn"

@@ -53,8 +53,12 @@ fn main() {
       println!("MIR: {serialized}");
     }
     Err(err) => {
-      panic!("printing not implemented yet");
+      for error in err {
+        error
+          .report(FILENAME)
+          .print((FILENAME, Source::from(SOURCE)))
+          .unwrap();
+      }
     }
   }
-
 }

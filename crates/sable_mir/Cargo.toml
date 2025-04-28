@@ -9,3 +9,5 @@ serde = []
 [dependencies]
 sable_parser = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
+smallvec = { workspace = true, features = ["serde"] }
+ariadne = { workspace = true }
