@@ -57,21 +57,21 @@ impl TypeMismatch {
   }
 }
 
-pub struct IllegalNullVoid {
+pub struct IllegalNullUntyped {
   pos: Position,
 }
 
-impl IllegalNullVoid {
+impl IllegalNullUntyped {
   pub fn new(pos: Position) -> Self {
     Self { pos }
   }
 
   pub fn report<'f>(&self, filename: &'f str) -> ParseErrReport<'f> {
     Report::build(ReportKind::Error, (filename, self.pos.range.clone()))
-      .with_message("illegal use of null or void")
+      .with_message("value is either null or evaluated to untyped")
       .with_label(
         Label::new((filename, self.pos.range.clone()))
-          .with_message("null or void here")
+          .with_message("illegal null or untyped value")
           .with_color(Color::Yellow),
       )
       .finish()
@@ -81,7 +81,7 @@ impl IllegalNullVoid {
 pub enum SemaExprError<'s> {
   VariableNotFound(VariableNotFound<'s>),
   TypeMismatch(TypeMismatch),
-  IllegalNullVoid(IllegalNullVoid),
+  IllegalNullVoid(IllegalNullUntyped),
 }
 
 impl<'s> SemaExprError<'s> {

@@ -6,7 +6,7 @@ use sable_parser::{
 use crate::{
   error::{
     AnalyzerError,
-    expr_errs::{IllegalNullVoid, SemaExprError, TypeMismatch},
+    expr_errs::{IllegalNullUntyped, SemaExprError, TypeMismatch},
     var_redeclared::VariableRedeclared,
   },
   scope::NamendValue,
@@ -51,7 +51,7 @@ pub fn check_let_stmt<'s>(
     let val_type = infer_expr(analyzer, assignee.get_value());
     if val_type == ValType::Void {
       return Err(AnalyzerError::ExprError(SemaExprError::IllegalNullVoid(
-        IllegalNullVoid::new(assignee.get_pos().clone()),
+        IllegalNullUntyped::new(assignee.get_pos().clone()),
       )));
     }
 
