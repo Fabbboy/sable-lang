@@ -49,7 +49,7 @@ pub fn check_let_stmt<'s>(
   if let Some(assignee) = let_statement.get_assignee() {
     check_expr(analyzer, assignee.get_value())?;
     let val_type = infer_expr(analyzer, assignee.get_value());
-    if val_type == ValType::Void {
+    if val_type == ValType::Void || val_type == ValType::Untyped {
       return Err(AnalyzerError::ExprError(SemaExprError::IllegalNullVoid(
         IllegalNullUntyped::new(assignee.get_pos().clone()),
       )));
