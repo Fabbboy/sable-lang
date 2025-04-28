@@ -44,7 +44,11 @@ impl<'s> Lowerer<'s> {
   }
 
   fn lower_stmt(&mut self, stmt: &Statement<'s>) -> Result<(), LoweringError> {
-    Ok(())
+    match stmt {
+      Statement::Expression(expression) => todo!(),
+      Statement::ReturnStatement(return_statement) => todo!(),
+      Statement::LetStatement(let_statement) => todo!(),
+    }
   }
 
   fn lower_block(
