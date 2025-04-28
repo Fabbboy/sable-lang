@@ -11,7 +11,7 @@ use crate::{
   checks::inference::infer_expr,
   error::{
     AnalyzerError,
-    expr_errs::{SemaExprError, TypeMismatch, VariableNotFound},
+    expr_errs::{FunctionNotFound, SemaExprError, TypeMismatch, VariableNotFound},
   },
   sema::Sema,
 };
@@ -49,7 +49,17 @@ pub fn check_call_expression<'s>(
   call_expression: &sable_parser::ast::expression::CallExpression<'s>,
   f: Rc<Function<'s>>,
 ) -> Result<(), AnalyzerError<'s>> {
-  todo!()
+  let name = call_expression.get_callee();
+  let func_idx = analyzer.funcs.get(name);
+  if func_idx.is_none() {
+    return Err(AnalyzerError::ExprError(SemaExprError::FunctionNotFound(
+      FunctionNotFound::new(name, call_expression.get_pos().clone()),
+    )));
+  }
+
+  let func = analyzer.get_func(*func_idx.unwrap());
+
+  Ok(())
 }
 
 pub fn check_block_expression<'s>(

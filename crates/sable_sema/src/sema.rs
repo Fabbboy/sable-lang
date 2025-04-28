@@ -2,8 +2,9 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
   checks::stmt_check::check_stmt,
-  error::{func_already_defined::FunctionAlreadyDefined, AnalyzerError},
-  resolver::Resolver, scope::NamendValue,
+  error::{AnalyzerError, func_already_defined::FunctionAlreadyDefined},
+  resolver::Resolver,
+  scope::NamendValue,
 };
 use sable_parser::ast::{ast::AST, expression::BlockExpression, function::Function};
 
@@ -65,14 +66,12 @@ impl<'s> Sema<'s> {
         ),
       )]);
     }
+    self.funcs.insert(f.get_name(), i);
 
     self.resolver.enter_scope();
     for arg in f.get_params() {
-      let namend = NamendValue::new(
-        arg.get_val_type().clone(),
-        arg.get_pos().clone(),
-      );
-      self.resolver.define_var(arg.get_name(),  namend);
+      let namend = NamendValue::new(arg.get_val_type().clone(), arg.get_pos().clone());
+      self.resolver.define_var(arg.get_name(), namend);
     }
 
     let block = f.get_body();
@@ -81,10 +80,7 @@ impl<'s> Sema<'s> {
     self.resolver.exit_scope();
 
     return match res {
-      Ok(_) => {
-        self.funcs.insert(f.get_name(), i);
-        Ok(())
-      }
+      Ok(_) => Ok(()),
       Err(errs) => Err(errs),
     };
   }

@@ -78,10 +78,41 @@ impl IllegalNullUntyped {
   }
 }
 
+pub struct FunctionNotFound<'s> {
+  name: &'s str,
+  pos: Position,
+}
+
+impl<'s> FunctionNotFound<'s> {
+  pub fn new(name: &'s str, pos: Position) -> Self {
+    Self { name, pos }
+  }
+
+  pub fn name(&self) -> &'s str {
+    self.name
+  }
+
+  pub fn pos(&self) -> Position {
+    self.pos.clone()
+  }
+
+  pub fn report(&self, filename: &'s str) -> ParseErrReport<'s> {
+    Report::build(ReportKind::Error, (filename, self.pos.range.clone()))
+      .with_message(format!("function `{}` not found", self.name))
+      .with_label(
+        Label::new((filename, self.pos.range.clone()))
+          .with_message("not found here")
+          .with_color(Color::Yellow),
+      )
+      .finish()
+  }
+}
+
 pub enum SemaExprError<'s> {
   VariableNotFound(VariableNotFound<'s>),
   TypeMismatch(TypeMismatch),
   IllegalNullVoid(IllegalNullUntyped),
+  FunctionNotFound(FunctionNotFound<'s>),
 }
 
 impl<'s> SemaExprError<'s> {
@@ -90,6 +121,7 @@ impl<'s> SemaExprError<'s> {
       SemaExprError::VariableNotFound(err) => err.report(filename),
       SemaExprError::TypeMismatch(err) => err.report(filename),
       SemaExprError::IllegalNullVoid(err) => err.report(filename),
+      SemaExprError::FunctionNotFound(err) => err.report(filename),
     }
   }
 }
