@@ -10,7 +10,7 @@ use sable_parser::ast::{ast::AST, expression::BlockExpression, function::Functio
 pub struct Sema<'s> {
   errors: Vec<AnalyzerError<'s>>,
   pub resolver: Resolver<'s>,
-  funcs: HashMap<&'s str, usize>,
+  pub funcs: HashMap<&'s str, usize>,
   ast: Rc<RefCell<AST<'s>>>,
 }
 
@@ -24,7 +24,7 @@ impl<'s> Sema<'s> {
     }
   }
 
-  fn get_func(&self, idx: usize) -> Rc<Function<'s>> {
+  pub fn get_func(&self, idx: usize) -> Rc<Function<'s>> {
     let ast = self.ast.borrow();
     ast.get_funcs()[idx].clone()
   }

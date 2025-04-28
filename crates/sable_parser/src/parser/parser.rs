@@ -6,8 +6,8 @@ use crate::{
   ast::{
     ast::AST,
     expression::{
-      AssignExpression, BinaryExpression, BlockExpression, Expression, LiteralExpression,
-      NullExpression, VariableExpression,
+      AssignExpression, BinaryExpression, BlockExpression, CallExpression, Expression,
+      LiteralExpression, NullExpression, VariableExpression,
     },
     function::{Function, FunctionParameter},
     statement::{LetStatement, ReturnStatement, Statement},
@@ -111,6 +111,26 @@ impl<'s> Parser<'s> {
     Ok(AssignExpression::new(name, expr, pos))
   }
 
+  fn parse_call_expr(&mut self, name: Token<'s>) -> Result<Expression<'s>, ParserError<'s>> {
+    next!(@plain self, [TokenType::Paren(true)]);
+    let mut args = Vec::new();
+    while !self.peek(smallvec![TokenType::Paren(false)]) {
+      let arg = self.parse_expression()?;
+      args.push(arg);
+      if self.peek(smallvec![TokenType::Comma]) {
+        next!(@plain self, [TokenType::Comma]);
+      }
+    }
+    next!(@plain self, [TokenType::Paren(false)]);
+    let pos = if args.is_empty() {
+      name.pos
+    } else {
+      name.pos.merge(args.last().unwrap().get_pos())
+    };
+    let call_expr = Expression::CallExpression(CallExpression::new(pos, name.lexeme, args));
+    Ok(call_expr)
+  }
+
   fn parse_factor(&mut self) -> Result<Expression<'s>, ParserError<'s>> {
     let tok = next!(@plain self, [TokenType::Integer, TokenType::Float, TokenType::Identifier, TokenType::Null, TokenType::Paren(true)]);
     return match tok.token_type {
@@ -127,6 +147,9 @@ impl<'s> Parser<'s> {
         if self.peek(smallvec![TokenType::Assign]) {
           let expr = self.parse_assign(name)?;
           return Ok(Expression::AssignExpression(expr));
+        } else if self.peek(smallvec![TokenType::Paren(true)]) {
+          let expr = self.parse_call_expr(tok)?;
+          return Ok(expr);
         }
         let lit = VariableExpression::new(name, tok.pos);
         Ok(Expression::VariableExpression(lit))

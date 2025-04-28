@@ -74,6 +74,7 @@
       "Expression": renderExpression, // Important fix
       "BinaryExpression": renderBinaryExpression,
       "NullExpression": renderNullExpression,
+      "CallExpression": renderCallExpression,
     };
 
     function renderFunctions(functions, parent) {
@@ -88,6 +89,18 @@
         if (func.pos) section.innerHTML += renderPosition(func.pos);
         if (func.body) dispatchRender("body", func.body, section);
       });
+    }
+
+    function renderCallExpression(expr, parent) {
+      const section = renderSection(`Call Expression: ${expr.callee}`, parent, 'bg-pink-100');
+      if (expr.pos) section.innerHTML += renderPosition(expr.pos);
+      if (expr.args) {
+        expr.args.forEach(arg => {
+          for (const [key, value] of Object.entries(arg)) {
+            dispatchRender(key, value, section);
+          }
+        });
+      }
     }
 
     function renderBody(body, parent) {

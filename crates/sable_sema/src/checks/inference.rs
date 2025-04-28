@@ -1,5 +1,7 @@
 use sable_parser::{
-  ast::expression::{AssignExpression, BinaryExpression, Expression, VariableExpression},
+  ast::expression::{
+    AssignExpression, BinaryExpression, CallExpression, Expression, VariableExpression,
+  },
   info::ValType,
 };
 
@@ -18,8 +20,22 @@ pub fn infer_expr<'s>(analyzer: &mut Sema<'s>, expr: &Expression) -> ValType {
     Expression::BinaryExpression(binary_expression) => {
       infer_binary_expression(analyzer, binary_expression)
     }
+    Expression::CallExpression(call_expression) => infer_call_expression(analyzer, call_expression),
     Expression::NullExpression(_) => ValType::Void,
   }
+}
+
+pub fn infer_call_expression<'s>(
+  analyzer: &mut Sema<'s>,
+  call_expression: &CallExpression,
+) -> ValType {
+  let name = call_expression.get_callee();
+  let func = analyzer.funcs.get(name);
+  if let Some(func) = func {
+    let func = analyzer.get_func(*func);
+    return func.get_ret_type().clone();
+  }
+  ValType::Untyped
 }
 
 pub fn infer_assign_expression<'s>(

@@ -38,7 +38,18 @@ pub fn check_expr<'s>(
       check_binary_expression(analyzer, binary_expression, f.clone())
     }
     Expression::NullExpression(_) => Ok(()),
+    Expression::CallExpression(call_expression) => {
+      check_call_expression(analyzer, call_expression, f)
+    }
   }
+}
+
+pub fn check_call_expression<'s>(
+  analyzer: &mut Sema<'s>,
+  call_expression: &sable_parser::ast::expression::CallExpression<'s>,
+  f: Rc<Function<'s>>,
+) -> Result<(), AnalyzerError<'s>> {
+  todo!()
 }
 
 pub fn check_block_expression<'s>(
