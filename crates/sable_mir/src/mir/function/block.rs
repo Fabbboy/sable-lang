@@ -1,3 +1,6 @@
+use std::{cell::{RefCell, RefMut}, rc::Rc};
+
+
 use crate::mir::instruction::Instruction;
 
 use super::MirFunction;
@@ -10,14 +13,13 @@ pub struct MirBlock<'s> {
 }
 
 impl<'s> MirBlock<'s> {
-  pub fn new<'b>(f: &'b mut MirFunction<'s>, name: &'s str) -> usize {
+  pub fn new<'b>(mut f: RefMut<'b, MirFunction<'s>>, name: &'s str) -> Rc<RefCell<Self>> {
     let block = MirBlock {
       name,
       instructions: Vec::new(),
     };
 
-    f.add_block(block);
-    f.get_blocks_mut().len() - 1
+    f.add_block(block)
   }
 
   pub fn add_instruction(&mut self, instruction: Instruction) {

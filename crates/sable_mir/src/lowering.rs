@@ -1,4 +1,7 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{
+  cell::{RefCell, RefMut},
+  rc::Rc,
+};
 
 use sable_parser::{
   ast::{ast::AST, expression::BlockExpression, function::Function, statement::Statement},
@@ -23,12 +26,13 @@ pub struct Lowerer<'s> {
 
 impl<'s> Lowerer<'s> {
   pub fn new(name: &'s str, ast: Rc<RefCell<AST<'s>>>) -> Self {
-    let module = Rc::new(RefCell::new(MirModule::new(name)));
+    let module = MirModule::new(name);
+
     Self {
-      module: module.clone(),
+      module: Rc::new(RefCell::new(module)),
       ast,
       errors: Vec::new(),
-      builder: Builder::new(module),
+      builder: Builder::new(),
     }
   }
 
@@ -45,16 +49,11 @@ impl<'s> Lowerer<'s> {
 
   fn lower_block(
     &mut self,
-    f: usize,
+    f: RefMut<MirFunction<'s>>,
     block: &BlockExpression<'s>,
   ) -> Result<(), Vec<LoweringError>> {
-    let entry_block_idx = {
-      let mut module = self.module.borrow_mut();
-      let f = module.get_function_mut(f).unwrap();
-      let block_idx = MirBlock::new(f, "entry");
-      block_idx
-    };
-    self.builder.set_active_block(entry_block_idx);
+    let entry_block = MirBlock::new(f, "entry");
+    self.builder.set_active_block(entry_block);
 
     let mut errors = Vec::new();
     for (_, stmt) in block.get_stmts().iter().enumerate() {
@@ -76,11 +75,8 @@ impl<'s> Lowerer<'s> {
 
     let name = function.get_name();
     let ret_type = function.get_ret_type();
-    let mir_func_idx = MirFunction::new(self.module.borrow_mut(), name, ret_type.clone());
+    let mir_func = MirFunction::new(self.module.borrow_mut(), name, ret_type.clone());
     for arg in function.get_params() {
-      let mut module = self.module.borrow_mut();
-      let mir_func = module.get_function_mut(mir_func_idx).unwrap();
-
       let name = arg.get_name();
       let type_ = arg.get_val_type();
       if !Self::type_sanity_check(type_.clone()) {
@@ -90,10 +86,10 @@ impl<'s> Lowerer<'s> {
       }
 
       let param = MirParam::new(name, type_);
-      mir_func.add_argument(param);
+      mir_func.borrow_mut().add_argument(param);
     }
 
-    match self.lower_block(mir_func_idx, function.get_body()) {
+    match self.lower_block(mir_func.borrow_mut(), function.get_body()) {
       Ok(_) => {}
       Err(err) => {
         self.errors.extend(err);
