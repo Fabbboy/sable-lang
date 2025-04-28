@@ -2,11 +2,12 @@ use std::cell::RefMut;
 
 use sable_parser::ast::ast::AST;
 
-use crate::error::AnalyzerError;
+use crate::{error::AnalyzerError, resolver::Resolver};
 
 pub struct Sema<'a, 's> {
   ast: RefMut<'a, AST<'s>>,
   errors: Vec<AnalyzerError<'s>>,
+  resolver: Resolver<'s>,
 }
 
 impl<'a, 's> Sema<'a, 's> {
@@ -14,6 +15,7 @@ impl<'a, 's> Sema<'a, 's> {
     Self {
       ast,
       errors: vec![],
+      resolver: Resolver::new(),
     }
   }
 
