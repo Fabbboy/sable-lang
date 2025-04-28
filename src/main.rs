@@ -1,4 +1,5 @@
 use ariadne::Source;
+use sable_mir::{lowering::Lowerer, mir::module::MirModule};
 use sable_parser::{lexer::lexer::Lexer, parser::parser::Parser};
 use sable_sema::sema::Sema;
 
@@ -43,4 +44,17 @@ fn main() {
       }
     }
   }
+
+  let mut mir_mod = MirModule::new(FILENAME);
+  let mut lowerer = Lowerer::new(&mut mir_mod, ast);
+  match lowerer.lower() {
+    Ok(_) => {
+      let serialized = serde_json::to_string_pretty(&mir_mod).unwrap();
+      println!("MIR: {serialized}");
+    }
+    Err(err) => {
+      panic!("printing not implemented yet");
+    }
+  }
+
 }
