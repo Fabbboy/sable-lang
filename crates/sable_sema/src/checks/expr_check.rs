@@ -12,7 +12,7 @@ use crate::{
   checks::inference::infer_expr,
   error::{
     AnalyzerError,
-    expr_errs::{SemaExprError, TypeMismatch, VariableNotFound},
+    expr_errs::{ExprCheckError, TypeMismatch, VariableNotFound},
     func_checks::{FunctionArgumentMismatch, FunctionCheckError, FunctionNotFound},
   },
   sema::Sema,
@@ -85,7 +85,7 @@ pub fn check_call_expression<'s>(
     let arg_type = infer_expr(analyzer, arg);
     let param_type = params[i].get_val_type();
     if arg_type != param_type {
-      return Err(AnalyzerError::ExprError(SemaExprError::TypeMismatch(
+      return Err(AnalyzerError::ExprError(ExprCheckError::TypeMismatch(
         TypeMismatch::new(param_type.clone(), arg_type, arg.get_pos().clone()),
       )));
     }
@@ -134,7 +134,7 @@ pub fn check_binary_expression<'s>(
     return Ok(());
   }
 
-  Err(AnalyzerError::ExprError(SemaExprError::TypeMismatch(
+  Err(AnalyzerError::ExprError(ExprCheckError::TypeMismatch(
     TypeMismatch::new(lhs_type, rhs_type, binary_expression.get_pos().clone()),
   )))
 }
@@ -147,7 +147,7 @@ pub fn check_variable_expression<'s>(
   if analyzer.resolver.is_declared(name) {
     Ok(())
   } else {
-    Err(AnalyzerError::ExprError(SemaExprError::VariableNotFound(
+    Err(AnalyzerError::ExprError(ExprCheckError::VariableNotFound(
       VariableNotFound::new(name, variable_expression.get_pos().clone()),
     )))
   }

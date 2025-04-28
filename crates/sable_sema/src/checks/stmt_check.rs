@@ -10,7 +10,7 @@ use sable_parser::{
 
 use crate::{
   error::{
-    AnalyzerError, SemaExprError, VariableRedeclared,
+    AnalyzerError, ExprCheckError, VariableRedeclared,
     expr_errs::{IllegalNullUntyped, TypeMismatch},
   },
   scope::NamendValue,
@@ -40,12 +40,12 @@ pub fn check_ret_stmt<'s>(
   check_expr(analyzer, &value, f.clone())?;
   let val_type = infer_expr(analyzer, value);
   if val_type == ValType::Void || val_type == ValType::Untyped {
-    return Err(AnalyzerError::ExprError(SemaExprError::IllegalNullVoid(
+    return Err(AnalyzerError::ExprError(ExprCheckError::IllegalNullVoid(
       IllegalNullUntyped::new(value.get_pos().clone()),
     )));
   }
   if val_type != f.get_ret_type() {
-    return Err(AnalyzerError::ExprError(SemaExprError::TypeMismatch(
+    return Err(AnalyzerError::ExprError(ExprCheckError::TypeMismatch(
       TypeMismatch::new(f.get_ret_type().clone(), val_type, value.get_pos().clone()),
     )));
   }
@@ -78,13 +78,13 @@ pub fn check_let_stmt<'s>(
     check_expr(analyzer, assignee.get_value(), f)?;
     let val_type = infer_expr(analyzer, assignee.get_value());
     if val_type == ValType::Void || val_type == ValType::Untyped {
-      return Err(AnalyzerError::ExprError(SemaExprError::IllegalNullVoid(
+      return Err(AnalyzerError::ExprError(ExprCheckError::IllegalNullVoid(
         IllegalNullUntyped::new(assignee.get_pos().clone()),
       )));
     }
 
     if val_type != let_statement.get_type().clone() {
-      return Err(AnalyzerError::ExprError(SemaExprError::TypeMismatch(
+      return Err(AnalyzerError::ExprError(ExprCheckError::TypeMismatch(
         TypeMismatch::new(
           let_statement.get_type().clone(),
           val_type,

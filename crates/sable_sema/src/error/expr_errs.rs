@@ -78,18 +78,18 @@ impl IllegalNullUntyped {
   }
 }
 
-pub enum SemaExprError<'s> {
+pub enum ExprCheckError<'s> {
   VariableNotFound(VariableNotFound<'s>),
   TypeMismatch(TypeMismatch),
   IllegalNullVoid(IllegalNullUntyped),
 }
 
-impl<'s> SemaExprError<'s> {
+impl<'s> ExprCheckError<'s> {
   pub fn report(&self, filename: &'s str) -> ParseErrReport<'s> {
     match self {
-      SemaExprError::VariableNotFound(err) => err.report(filename),
-      SemaExprError::TypeMismatch(err) => err.report(filename),
-      SemaExprError::IllegalNullVoid(err) => err.report(filename),
+      ExprCheckError::VariableNotFound(err) => err.report(filename),
+      ExprCheckError::TypeMismatch(err) => err.report(filename),
+      ExprCheckError::IllegalNullVoid(err) => err.report(filename),
     }
   }
 }
