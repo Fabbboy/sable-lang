@@ -1,3 +1,4 @@
+use sable_parser::info::ValType;
 use smallvec::SmallVec;
 
 pub mod block;
@@ -12,14 +13,16 @@ const MAX_ARGUMENTS: usize = 4;
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub struct MirFunction<'s> {
   name: &'s str,
+  ret_type: ValType,
   blocks: Vec<MirBlock<'s>>,
   arguments: SmallVec<[MirParam<'s>; MAX_ARGUMENTS]>,
 }
 
 impl<'s> MirFunction<'s> {
-  pub fn new(name: &'s str) -> Self {
+  pub fn new(name: &'s str, ret_type: ValType) -> Self {
     Self {
       name,
+      ret_type,
       blocks: Vec::new(),
       arguments: SmallVec::new(),
     }
@@ -39,5 +42,9 @@ impl<'s> MirFunction<'s> {
 
   pub fn get_name(&self) -> &'s str {
     self.name
+  }
+  
+  pub fn get_ret_type(&self) -> &ValType {
+    &self.ret_type
   }
 }

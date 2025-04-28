@@ -1,7 +1,7 @@
 use std::{cell::RefCell, rc::Rc};
 
 use sable_parser::{
-  ast::{ast::AST, function::Function},
+  ast::{ast::AST, expression::BlockExpression, function::Function},
   info::ValType,
 };
 
@@ -35,6 +35,10 @@ impl<'l, 's> Lowerer<'l, 's> {
     }
   }
 
+  fn lower_block(&mut self, block: &BlockExpression<'s>) -> Result<(), Vec<LoweringError>> {
+    todo!();
+  }
+
   fn lower_function(
     &mut self,
     function: Rc<Function<'s>>,
@@ -42,7 +46,8 @@ impl<'l, 's> Lowerer<'l, 's> {
     let errs = Vec::new();
 
     let name = function.get_name();
-    let mut mir_func = MirFunction::new(name);
+    let ret_type = function.get_ret_type();
+    let mut mir_func = MirFunction::new(name, ret_type.clone());
     for arg in function.get_params() {
       let name = arg.get_name();
       let type_ = arg.get_val_type();
@@ -54,6 +59,13 @@ impl<'l, 's> Lowerer<'l, 's> {
 
       let param = MirParam::new(name, type_);
       mir_func.add_argument(param);
+    }
+
+    match self.lower_block(function.get_body()) {
+      Ok(_) => {}
+      Err(err) => {
+        self.errors.extend(err);
+      }
     }
 
     if errs.is_empty() {
