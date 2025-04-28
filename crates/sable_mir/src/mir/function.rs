@@ -2,6 +2,8 @@ use block::MirBlock;
 
 pub mod block;
 
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub struct MirFunction<'s> {
   name: &'s str,
   blocks: Vec<MirBlock<'s>>,

@@ -1,5 +1,7 @@
 use crate::mir::instruction::Instruction;
 
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub struct MirBlock<'s> {
   name: &'s str,
   instructions: Vec<Instruction>,

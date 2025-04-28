@@ -1,5 +1,7 @@
 use super::function::MirFunction;
 
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub struct MirModule<'s> {
   name: &'s str,
   functions: Vec<MirFunction<'s>>,
