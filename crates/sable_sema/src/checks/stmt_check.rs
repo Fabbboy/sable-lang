@@ -26,7 +26,7 @@ pub fn check_stmt<'s>(
 ) -> Result<(), AnalyzerError<'s>> {
   match stmt {
     Statement::Expression(expression) => check_expr(analyzer, expression, f),
-    Statement::ReturnStatement(_) => Ok(()),
+    Statement::ReturnStatement(ret_statement) => check_ret_stmt(analyzer, ret_statement, f),
     Statement::LetStatement(let_statement) => check_let_stmt(analyzer, let_statement, f),
   }
 }
@@ -36,7 +36,21 @@ pub fn check_ret_stmt<'s>(
   ret_statement: &sable_parser::ast::statement::ReturnStatement<'s>,
   f: Rc<Function<'s>>,
 ) -> Result<(), AnalyzerError<'s>> {
-  todo!()
+  let value = ret_statement.get_value();
+  check_expr(analyzer, &value, f.clone())?;
+  let val_type = infer_expr(analyzer, value);
+  if val_type == ValType::Void || val_type == ValType::Untyped {
+    return Err(AnalyzerError::ExprError(SemaExprError::IllegalNullVoid(
+      IllegalNullUntyped::new(value.get_pos().clone()),
+    )));
+  }
+  if val_type != f.get_ret_type() {
+    return Err(AnalyzerError::ExprError(SemaExprError::TypeMismatch(
+      TypeMismatch::new(f.get_ret_type().clone(), val_type, value.get_pos().clone()),
+    )));
+  }
+
+  Ok(())
 }
 
 pub fn check_let_stmt<'s>(

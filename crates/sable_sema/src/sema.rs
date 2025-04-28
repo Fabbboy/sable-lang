@@ -1,12 +1,12 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
-  checks::{expr_check::check_expr, stmt_check::check_let_stmt},
+  checks::stmt_check::check_stmt,
   error::{AnalyzerError, func_already_defined::FunctionAlreadyDefined},
   resolver::Resolver,
 };
 use sable_parser::ast::{
-  ast::AST, expression::BlockExpression, function::Function, statement::Statement,
+  ast::AST, expression::BlockExpression, function::Function,
 };
 
 pub struct Sema<'s> {
@@ -31,24 +31,6 @@ impl<'s> Sema<'s> {
     ast.get_funcs()[idx].clone()
   }
 
-  fn check_statement(
-    &mut self,
-    stmt: &Statement<'s>,
-    f: Rc<Function<'s>>,
-  ) -> Result<(), AnalyzerError<'s>> {
-    match stmt {
-      Statement::Expression(expression) => {
-        let checked = check_expr(self, expression, f.clone());
-        match checked {
-          Ok(_) => Ok(()),
-          Err(err) => Err(err),
-        }
-      }
-      Statement::ReturnStatement(_) => Ok(()),
-      Statement::LetStatement(let_statement) => check_let_stmt(self, let_statement, f.clone()),
-    }
-  }
-
   fn check_block<'f>(
     &mut self,
     block: &BlockExpression<'s>,
@@ -57,7 +39,7 @@ impl<'s> Sema<'s> {
     let mut errors = Vec::new();
     self.resolver.enter_scope();
     for (_, stmt) in block.get_stmts().iter().enumerate() {
-      match self.check_statement(stmt, f.clone()) {
+      match check_stmt(self, stmt, f.clone()) {
         Ok(_) => {}
         Err(err) => errors.push(err),
       }

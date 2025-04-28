@@ -6,6 +6,7 @@ const SOURCE: &str = r#"
 func i32 add(i32 x, i32 y) {
  let i32 x = 1;
   let i32 y = 2;
+  return 2;
 }
 "#;
 const FILENAME: &str = "test.sbl";
