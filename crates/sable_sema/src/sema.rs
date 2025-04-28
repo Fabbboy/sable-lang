@@ -1,4 +1,4 @@
-use std::{cell::RefCell, clone, collections::HashMap, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
   error::{func_already_defined::FunctionAlreadyDefined, var_redeclared::VariableRedeclared, AnalyzerError},
