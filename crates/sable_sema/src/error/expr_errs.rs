@@ -57,9 +57,31 @@ impl TypeMismatch {
   }
 }
 
+pub struct IllegalNullVoid {
+  pos: Position,
+}
+
+impl IllegalNullVoid {
+  pub fn new(pos: Position) -> Self {
+    Self { pos }
+  }
+
+  pub fn report<'f>(&self, filename: &'f str) -> ParseErrReport<'f> {
+    Report::build(ReportKind::Error, (filename, self.pos.range.clone()))
+      .with_message("illegal use of null or void")
+      .with_label(
+        Label::new((filename, self.pos.range.clone()))
+          .with_message("null or void here")
+          .with_color(Color::Yellow),
+      )
+      .finish()
+  }
+}
+
 pub enum SemaExprError<'s> {
   VariableNotFound(VariableNotFound<'s>),
   TypeMismatch(TypeMismatch),
+  IllegalNullVoid(IllegalNullVoid),
 }
 
 impl<'s> SemaExprError<'s> {
@@ -67,6 +89,7 @@ impl<'s> SemaExprError<'s> {
     match self {
       SemaExprError::VariableNotFound(err) => err.report(filename),
       SemaExprError::TypeMismatch(err) => err.report(filename),
+      SemaExprError::IllegalNullVoid(err) => err.report(filename),
     }
   }
 }

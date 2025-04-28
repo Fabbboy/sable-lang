@@ -1,12 +1,19 @@
-use sable_parser::ast::statement::{LetStatement, Statement};
+use sable_parser::{
+  ast::statement::{LetStatement, Statement},
+  info::ValType,
+};
 
 use crate::{
-  error::{AnalyzerError, var_redeclared::VariableRedeclared},
+  error::{
+    AnalyzerError,
+    expr_errs::{IllegalNullVoid, SemaExprError, TypeMismatch},
+    var_redeclared::VariableRedeclared,
+  },
   scope::NamendValue,
   sema::Sema,
 };
 
-use super::expr_check::check_expr;
+use super::{expr_check::check_expr, inference::infer_expr};
 
 pub fn check_stmt<'s>(
   analyzer: &mut Sema<'s>,
@@ -41,6 +48,22 @@ pub fn check_let_stmt<'s>(
 
   if let Some(assignee) = let_statement.get_assignee() {
     check_expr(analyzer, assignee.get_value())?;
+    let val_type = infer_expr(analyzer, assignee.get_value());
+    if val_type == ValType::Void {
+      return Err(AnalyzerError::ExprError(SemaExprError::IllegalNullVoid(
+        IllegalNullVoid::new(assignee.get_pos().clone()),
+      )));
+    }
+
+    if val_type != let_statement.get_type().clone() {
+      return Err(AnalyzerError::ExprError(SemaExprError::TypeMismatch(
+        TypeMismatch::new(
+          let_statement.get_type().clone(),
+          val_type,
+          assignee.get_pos().clone(),
+        ),
+      )));
+    }
   }
 
   let namend = NamendValue::new(
