@@ -1,5 +1,4 @@
 use ariadne::Source;
-use sable_mir::lowering::Lowerer;
 use sable_parser::{lexer::lexer::Lexer, parser::parser::Parser};
 use sable_sema::sema::Sema;
 
@@ -37,22 +36,6 @@ fn main() {
     Ok(_) => println!("No errors found."),
     Err(errors) => {
       for error in errors {
-        error
-          .report(FILENAME)
-          .print((FILENAME, Source::from(SOURCE)))
-          .unwrap();
-      }
-    }
-  }
-
-  let mut lowerer = Lowerer::new(FILENAME, ast);
-  match lowerer.lower() {
-    Ok(mir_mod) => {
-      let serialized = serde_json::to_string_pretty(&mir_mod).unwrap();
-      println!("MIR: {serialized}");
-    }
-    Err(err) => {
-      for error in err {
         error
           .report(FILENAME)
           .print((FILENAME, Source::from(SOURCE)))
