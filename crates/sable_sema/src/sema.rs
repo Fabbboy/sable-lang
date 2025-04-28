@@ -1,7 +1,10 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
-  error::{func_already_defined::FunctionAlreadyDefined, var_redeclared::VariableRedeclared, AnalyzerError},
+  checks::expr_check::check_expr,
+  error::{
+    AnalyzerError, func_already_defined::FunctionAlreadyDefined, var_redeclared::VariableRedeclared,
+  },
   resolver::Resolver,
   scope::NamendValue,
 };
@@ -49,20 +52,18 @@ impl<'s> Sema<'s> {
         }
       };
 
-      return Err(AnalyzerError::VariableRedeclared(
-        VariableRedeclared::new(
-          name,
-          let_statement.get_pos().clone(),
-          earlier.get_pos(f).clone(),
-        ),
-      ));
+      return Err(AnalyzerError::VariableRedeclared(VariableRedeclared::new(
+        name,
+        let_statement.get_pos().clone(),
+        earlier.get_pos(f).clone(),
+      )));
     }
 
     let namend = NamendValue::LetStmt(i);
     self.resolver.define_var(name, namend);
     Ok(())
   }
- 
+
   fn check_statement(
     &mut self,
     stmt: &Statement<'s>,
@@ -70,13 +71,19 @@ impl<'s> Sema<'s> {
     f: Rc<Function<'s>>,
   ) -> Result<(), AnalyzerError<'s>> {
     match stmt {
-      Statement::Expression(expression) => Ok(()),
+      Statement::Expression(expression) => {
+        let checked = check_expr(self, expression);
+        match checked {
+          Ok(_) => Ok(()),
+          Err(err) => Err(err),
+        }
+      }
       Statement::ReturnStatement(return_statement) => Ok(()),
       Statement::LetStatement(let_statement) => self.check_let(let_statement, i, f),
     }
   }
 
-  fn check_block(
+  fn check_block<'f>(
     &mut self,
     block: &BlockExpression<'s>,
     f: Rc<Function<'s>>,

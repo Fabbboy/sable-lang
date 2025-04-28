@@ -1,9 +1,6 @@
-use std::{cell::Ref, collections::HashMap, rc::Rc};
+use std::{collections::HashMap, rc::Rc};
 
-use sable_parser::{
-  ast::{ast::AST, function::Function, statement::LetStatement},
-  position::Position,
-};
+use sable_parser::{ast::function::Function, position::Position};
 
 pub enum NamendValue {
   LetStmt(usize),
