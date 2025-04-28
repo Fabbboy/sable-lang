@@ -32,7 +32,7 @@ impl<'s> VariableRedeclared<'s> {
           .with_message("first declared here")
           .with_color(Color::Yellow)
           .with_order(1),
-      ) 
+      )
       .finish()
   }
 }

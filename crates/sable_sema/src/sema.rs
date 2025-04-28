@@ -2,16 +2,11 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
   checks::{expr_check::check_expr, stmt_check::check_let_stmt},
-  error::{
-    func_already_defined::FunctionAlreadyDefined, AnalyzerError
-  },
+  error::{AnalyzerError, func_already_defined::FunctionAlreadyDefined},
   resolver::Resolver,
 };
 use sable_parser::ast::{
-  ast::AST,
-  expression::BlockExpression,
-  function::Function,
-  statement::Statement,
+  ast::AST, expression::BlockExpression, function::Function, statement::Statement,
 };
 
 pub struct Sema<'s> {
@@ -46,7 +41,7 @@ impl<'s> Sema<'s> {
         }
       }
       Statement::ReturnStatement(_) => Ok(()),
-      Statement::LetStatement(let_statement) => check_let_stmt(self, let_statement)
+      Statement::LetStatement(let_statement) => check_let_stmt(self, let_statement),
     }
   }
 

@@ -1,8 +1,12 @@
 use sable_parser::parser::error::ParseErrReport;
 
+pub mod expr_errs;
 pub mod func_already_defined;
 pub mod var_redeclared;
-pub mod expr_errs;
+
+pub use expr_errs::SemaExprError;
+pub use func_already_defined::FunctionAlreadyDefined;
+pub use var_redeclared::VariableRedeclared;
 
 pub enum AnalyzerError<'s> {
   FunctionAlreadyDefined(func_already_defined::FunctionAlreadyDefined<'s>),

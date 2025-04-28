@@ -5,9 +5,8 @@ use sable_parser::{
 
 use crate::{
   error::{
-    AnalyzerError,
-    expr_errs::{IllegalNullUntyped, SemaExprError, TypeMismatch},
-    var_redeclared::VariableRedeclared,
+    AnalyzerError, SemaExprError, VariableRedeclared,
+    expr_errs::{IllegalNullUntyped, TypeMismatch},
   },
   scope::NamendValue,
   sema::Sema,
