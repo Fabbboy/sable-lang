@@ -5,6 +5,7 @@ use sable_sema::sema::Sema;
 const SOURCE: &str = r#"
 func i32 add(i32 x, i32 y) {
   let i32 x = 123;
+  let i32 x = 233;
   let f32 y = 456.789;
   let i32 z = x + y;
   3 + 3;
@@ -34,7 +35,7 @@ fn main() {
     }
   };
 
-  let mut sema = Sema::new(ast.borrow_mut());
+  let mut sema = Sema::new(ast.clone());
   match sema.analyze() {
     Ok(_) => println!("No errors found."),
     Err(errors) => {

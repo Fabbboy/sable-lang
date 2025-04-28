@@ -11,13 +11,13 @@ impl<'s> Resolver<'s> {
     }
   }
 
-  pub fn define_var(&mut self, name: &'s str, value: NamendValue<'s>) {
+  pub fn define_var(&mut self, name: &'s str, value: NamendValue) {
     if let Some(scope) = self.scopes.last_mut() {
       scope.add_variable(name, value);
     }
   }
 
-  pub fn resolve_var(&self, name: &'s str) -> Option<&NamendValue<'s>> {
+  pub fn resolve_var(&self, name: &'s str) -> Option<&NamendValue> {
     for scope in self.scopes.iter().rev() {
       if let Some(value) = scope.get_variable(name) {
         return Some(value);
@@ -32,5 +32,14 @@ impl<'s> Resolver<'s> {
 
   pub fn exit_scope(&mut self) {
     self.scopes.pop();
+  }
+
+  pub fn is_declared(&self, name: &'s str) -> bool {
+    for scope in self.scopes.iter().rev() {
+      if scope.is_declared(name) {
+        return true;
+      }
+    }
+    false
   }
 }

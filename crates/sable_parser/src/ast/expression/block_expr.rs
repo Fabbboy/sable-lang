@@ -19,4 +19,8 @@ impl<'s> BlockExpression<'s> {
   pub fn get_stmts(&self) -> &Vec<Statement<'s>> {
     &self.stmts
   }
+
+  pub fn get_at(&self, idx: usize) -> Option<&Statement<'s>> {
+    self.stmts.get(idx)
+  }
 }

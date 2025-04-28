@@ -13,4 +13,4 @@ serde = []
 phf = { workspace = true, features = ["macros"] }
 smallvec = { workspace = true }
 ariadne = { workspace = true }
-serde = { workspace = true, features = ["derive"] }
+serde = { workspace = true, features = ["derive", "rc"] }
