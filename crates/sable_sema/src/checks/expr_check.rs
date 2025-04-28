@@ -1,5 +1,5 @@
 use sable_parser::ast::expression::{
-  AssignExpression, BinaryExpression, Expression, LiteralExpression, VariableExpression,
+  AssignExpression, BinaryExpression, Expression, VariableExpression,
 };
 
 use crate::{
@@ -11,13 +11,17 @@ use crate::{
   sema::Sema,
 };
 
+use super::stmt_check::check_stmt;
+
 pub fn check_expr<'s>(
   analyzer: &mut Sema<'s>,
   expr: &Expression<'s>,
 ) -> Result<(), AnalyzerError<'s>> {
   match expr {
     Expression::LiteralExpression(_) => Ok(()),
-    Expression::BlockExpression(block_expression) => todo!(),
+    Expression::BlockExpression(block_expression) => {
+      check_block_expression(analyzer, block_expression)
+    }
     Expression::AssignExpression(assign_expression) => {
       check_assign_expression(analyzer, assign_expression)
     }
@@ -29,6 +33,20 @@ pub fn check_expr<'s>(
     }
     Expression::NullExpression(_) => Ok(()),
   }
+}
+
+pub fn check_block_expression<'s>(
+  analyzer: &mut Sema<'s>,
+  block_expression: &sable_parser::ast::expression::BlockExpression<'s>,
+) -> Result<(), AnalyzerError<'s>> {
+  analyzer.resolver.enter_scope();
+  for (_, stmt) in block_expression.get_stmts().iter().enumerate() {
+    match check_stmt(analyzer, stmt) {
+      Ok(_) => {}
+      Err(err) => return Err(err),
+    }
+  }
+  Ok(())
 }
 
 pub fn check_binary_expression<'s>(

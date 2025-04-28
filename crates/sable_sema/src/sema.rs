@@ -1,18 +1,17 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
-  checks::expr_check::{check_assign_expression, check_expr},
+  checks::{expr_check::check_expr, stmt_check::check_let_stmt},
   error::{
-    AnalyzerError, func_already_defined::FunctionAlreadyDefined, var_redeclared::VariableRedeclared,
+    func_already_defined::FunctionAlreadyDefined, AnalyzerError
   },
   resolver::Resolver,
-  scope::NamendValue,
 };
 use sable_parser::ast::{
   ast::AST,
   expression::BlockExpression,
   function::Function,
-  statement::{LetStatement, Statement},
+  statement::Statement,
 };
 
 pub struct Sema<'s> {
@@ -37,43 +36,6 @@ impl<'s> Sema<'s> {
     ast.get_funcs()[idx].clone()
   }
 
-  fn check_let(&mut self, let_statement: &LetStatement<'s>) -> Result<(), AnalyzerError<'s>> {
-    let name = let_statement.get_name();
-    if self.resolver.is_declared(name) {
-      let earlier = match self.resolver.resolve_var(name) {
-        Some(v) => v,
-        None => {
-          unreachable!()
-        }
-      };
-
-      return Err(AnalyzerError::VariableRedeclared(VariableRedeclared::new(
-        name,
-        let_statement.get_pos().clone(),
-        earlier.get_pos().clone(),
-      )));
-    }
-
-    let namend = NamendValue::new(
-      let_statement.get_type().clone(),
-      let_statement.get_pos().clone(),
-    );
-
-    if let_statement.get_assignee().is_some() {
-      let assignee = let_statement.get_assignee().as_ref().unwrap();
-      let checked = check_assign_expression(self, assignee);
-      match checked {
-        Ok(_) => {}
-        Err(err) => {
-          return Err(err);
-        }
-      }
-    }
-
-    self.resolver.define_var(name, namend);
-    Ok(())
-  }
-
   fn check_statement(&mut self, stmt: &Statement<'s>) -> Result<(), AnalyzerError<'s>> {
     match stmt {
       Statement::Expression(expression) => {
@@ -84,7 +46,7 @@ impl<'s> Sema<'s> {
         }
       }
       Statement::ReturnStatement(_) => Ok(()),
-      Statement::LetStatement(let_statement) => self.check_let(let_statement),
+      Statement::LetStatement(let_statement) => check_let_stmt(self, let_statement)
     }
   }
 
