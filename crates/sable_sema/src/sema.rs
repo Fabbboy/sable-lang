@@ -1,7 +1,7 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
-  checks::expr_check::check_expr,
+  checks::expr_check::{check_assign_expression, check_expr},
   error::{
     AnalyzerError, func_already_defined::FunctionAlreadyDefined, var_redeclared::VariableRedeclared,
   },
@@ -17,7 +17,7 @@ use sable_parser::ast::{
 
 pub struct Sema<'s> {
   errors: Vec<AnalyzerError<'s>>,
-  resolver: Resolver<'s>,
+  pub resolver: Resolver<'s>,
   funcs: HashMap<&'s str, usize>,
   ast: Rc<RefCell<AST<'s>>>,
 }
@@ -60,6 +60,18 @@ impl<'s> Sema<'s> {
     }
 
     let namend = NamendValue::LetStmt(i);
+
+    if let_statement.get_assignee().is_some() {
+      let assignee = let_statement.get_assignee().as_ref().unwrap();
+      let checked = check_assign_expression(self, assignee);
+      match checked {
+        Ok(_) => {}
+        Err(err) => {
+          return Err(err);
+        }
+      }
+    }
+
     self.resolver.define_var(name, namend);
     Ok(())
   }
@@ -121,12 +133,15 @@ impl<'s> Sema<'s> {
         ),
       )]);
     }
-    self.funcs.insert(f.get_name(), i);
 
     let block = f.get_body();
     let res = self.check_block(block, f.clone());
+
     return match res {
-      Ok(_) => Ok(()),
+      Ok(_) => {
+        self.funcs.insert(f.get_name(), i);
+        Ok(())
+      }
       Err(errs) => Err(errs),
     };
   }
