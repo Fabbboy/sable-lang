@@ -6,7 +6,7 @@ pub use assign_inst::AssignInst;
 pub use binary_inst::BinaryInst;
 pub use define_inst::DefineInst;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Instruction<'s> {
   Nop,
   Define(define_inst::DefineInst<'s>),

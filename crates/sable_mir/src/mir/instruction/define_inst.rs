@@ -2,7 +2,7 @@ use sable_parser::info::ValType;
 
 use crate::mir::value::Value;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DefineInst<'s> {
   name: &'s str,
   type_: ValType,

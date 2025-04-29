@@ -1,6 +1,6 @@
 use crate::mir::value::Value;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct AssignInst<'s> {
   dest: &'s str,
   src: Value<'s>,

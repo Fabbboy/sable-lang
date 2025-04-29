@@ -41,12 +41,12 @@ impl<'s, 'b> MirBuilder<'s, 'b> {
     name: &'s str,
     type_: ValType,
     value: Value<'s>,
-  ) -> Result<Value<'s>, MirError<'s>> {
+  ) -> Result<(), MirError<'s>> {
     let mut block = self.get_active_block()?;
     let define = DefineInst::new(name, type_, value);
-    let inst = Instruction::Define(define);
-    let idx = block.add_instruction(inst);
-    Ok(Value::Instruction(idx))
+    let inst: Instruction<'_> = Instruction::Define(define);
+    block.add_instruction(inst);
+    Ok(())
   }
 
   pub fn create_assign(
@@ -54,38 +54,34 @@ impl<'s, 'b> MirBuilder<'s, 'b> {
     dest: &'s str,
     src: Value<'s>,
   ) -> Result<Value<'s>, MirError<'s>> {
-    let mut block = self.get_active_block()?;
     let assign = Instruction::Assign(AssignInst::new(dest, src));
-    let idx = block.add_instruction(assign);
-    Ok(Value::Instruction(idx))
+    Ok(Value::Instruction(Box::new(assign)))
   }
 
   pub fn create_add(&mut self, lhs: Value<'s>, rhs: Value<'s>) -> Result<Value<'s>, MirError<'s>> {
-    let mut block = self.get_active_block()?;
     let inst = Instruction::Binary(BinaryInst::add(lhs, rhs));
-    let idx = block.add_instruction(inst);
-    Ok(Value::Instruction(idx))
+    Ok(Value::Instruction(Box::new(inst)))
   }
 
   pub fn create_sub(&mut self, lhs: Value<'s>, rhs: Value<'s>) -> Result<Value<'s>, MirError<'s>> {
-    let mut block = self.get_active_block()?;
     let inst = Instruction::Binary(BinaryInst::sub(lhs, rhs));
-    let idx = block.add_instruction(inst);
-    Ok(Value::Instruction(idx))
+    Ok(Value::Instruction(Box::new(inst)))
   }
 
   pub fn create_mul(&mut self, lhs: Value<'s>, rhs: Value<'s>) -> Result<Value<'s>, MirError<'s>> {
-    let mut block = self.get_active_block()?;
     let inst = Instruction::Binary(BinaryInst::mul(lhs, rhs));
-    let idx = block.add_instruction(inst);
-    Ok(Value::Instruction(idx))
+    Ok(Value::Instruction(Box::new(inst)))
   }
 
   pub fn create_div(&mut self, lhs: Value<'s>, rhs: Value<'s>) -> Result<Value<'s>, MirError<'s>> {
-    let mut block = self.get_active_block()?;
     let inst = Instruction::Binary(BinaryInst::div(lhs, rhs));
-    let idx = block.add_instruction(inst);
-    Ok(Value::Instruction(idx))
+    Ok(Value::Instruction(Box::new(inst)))
+  }
+
+  pub fn write_instruction(&mut self, inst: Instruction<'s>) -> Result<(), MirError<'s>> {
+    let mut block = self.get_active_block()?;
+    block.add_instruction(inst);
+    Ok(())
   }
 
   pub fn set_insert(&mut self, block: usize) -> Result<(), MirError<'s>> {
