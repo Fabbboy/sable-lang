@@ -1,23 +1,20 @@
-use std::cell::RefMut;
+use std::{
+  cell::{RefCell, RefMut},
+  rc::Rc,
+};
 
-use super::{error::MirError, function::MirFunction};
+use super::function::MirBlock;
 
-pub struct MirBuilder<'b, 's> {
-  func: RefMut<'b, MirFunction<'s>>,
-  ab: Option<usize>,
+pub struct MirBuilder<'s> {
+  ab: Option<RefMut<'s, MirBlock<'s>>>,
 }
 
-impl<'b, 's> MirBuilder<'b, 's> {
-  pub fn new(func: RefMut<'b, MirFunction<'s>>) -> Self {
-    MirBuilder { func, ab: None }
+impl<'s> MirBuilder<'s> {
+  pub fn new() -> Self {
+    MirBuilder { ab: None }
   }
 
-  pub fn set_insert(&mut self, ab: usize) -> Result<(), MirError> {
-    let blk = self.func.get_block(ab);
-    if blk.is_none() {
-      return Err(MirError::BlockNotFound(ab));
-    }
+  pub fn set_insert(&mut self, ab: RefMut<'s, MirBlock<'s>>) {
     self.ab = Some(ab);
-    Ok(())
   }
 }

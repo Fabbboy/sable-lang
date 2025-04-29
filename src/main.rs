@@ -1,8 +1,5 @@
 use ariadne::Source;
-use sable_mir::mir::{
-  function::{MirBlock, MirFunction},
-  module::MirModule,
-};
+use sable_mir::lowering::Lowering;
 use sable_parser::{lexer::lexer::Lexer, parser::parser::Parser};
 use sable_sema::sema::Sema;
 
@@ -48,17 +45,13 @@ fn main() {
     }
   }
 
-  let mut mir_mod = MirModule::new("test");
-  {
-    let add_idx = mir_mod.add_func(MirFunction::new("add"));
-    let add_blk_idx = {
-      let add_block = MirBlock::new("entry");
-      let mut add_func = mir_mod.get_func_mut(add_idx).unwrap();
-      add_func.add_block(add_block)
-    };
-    let mut add_builder = mir_mod.get_builder(add_idx).unwrap();
-    add_builder.set_insert(add_blk_idx).unwrap();
+  let mut lowerer = Lowering::new("test", ast);
+  match lowerer.lower() {
+    Ok(mir_mod) => {
+      println!("Lowered MIR: {:#?}", mir_mod);
+    }
+    Err(errors) => {
+      unimplemented!();
+    }
   }
-
-  println!("{:#?}", mir_mod);
 }

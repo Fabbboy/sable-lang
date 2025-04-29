@@ -1,14 +1,15 @@
 use std::{
   cell::{Ref, RefCell, RefMut},
+  rc::Rc,
   vec,
 };
 
-use super::{builder::MirBuilder, function::MirFunction};
+use super::function::MirFunction;
 
 #[derive(Debug)]
 pub struct MirModule<'s> {
   name: &'s str,
-  funcs: Vec<RefCell<MirFunction<'s>>>,
+  funcs: Vec<Rc<RefCell<MirFunction<'s>>>>,
 }
 
 impl<'s> MirModule<'s> {
@@ -20,7 +21,7 @@ impl<'s> MirModule<'s> {
   }
 
   pub fn add_func(&mut self, func: MirFunction<'s>) -> usize {
-    let func = RefCell::new(func);
+    let func = Rc::new(RefCell::new(func));
     self.funcs.push(func);
     self.funcs.len() - 1
   }
@@ -35,10 +36,5 @@ impl<'s> MirModule<'s> {
 
   pub fn name(&self) -> &str {
     self.name
-  }
-
-  pub fn get_builder(&mut self, func_index: usize) -> Option<MirBuilder<'_, 's>> {
-    let func = self.get_func_mut(func_index)?;
-    Some(MirBuilder::new(func))
   }
 }
