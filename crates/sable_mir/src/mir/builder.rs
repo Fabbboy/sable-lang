@@ -2,6 +2,8 @@ use std::cell::RefMut;
 
 use sable_parser::info::ValType;
 
+use crate::mir::instruction::AssignInst;
+
 use super::{
   error::MirError,
   function::{MirBlock, MirFunction},
@@ -38,12 +40,19 @@ impl<'s, 'b> MirBuilder<'s, 'b> {
     &mut self,
     name: &'s str,
     type_: ValType,
-    value: Value,
-  ) -> Result<Value, MirError<'s>> {
+    value: Value<'s>,
+  ) -> Result<Value<'s>, MirError<'s>> {
     let mut block = self.get_active_block()?;
     let define = DefineInst::new(name, type_, value);
     let inst = Instruction::Define(define);
     let idx = block.add_instruction(inst);
+    Ok(Value::Instruction(idx))
+  }
+
+  pub fn create_assign(&mut self, dest: &'s str, src: Value<'s>) -> Result<Value<'s>, MirError<'s>> {
+    let mut block = self.get_active_block()?;
+    let assign = Instruction::Assign(AssignInst::new(dest, src));
+    let idx = block.add_instruction(assign);
     Ok(Value::Instruction(idx))
   }
 

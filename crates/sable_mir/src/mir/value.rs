@@ -1,7 +1,8 @@
 pub mod constant;
 
-#[derive(Debug)]
-pub enum Value {
+#[derive(Debug, Clone)]
+pub enum Value<'s> {
   Constant(constant::Constant),
   Instruction(usize),
+  Str(&'s str),
 }

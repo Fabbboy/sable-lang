@@ -6,6 +6,7 @@ pub enum MirError<'s> {
   BlockNotFound(usize),
   ValueMustBeTyped,
   InvalidNumericValue(&'s str),
+  UndefinedVariable(&'s str),
 }
 
 impl<'s> MirError<'s> {
@@ -17,6 +18,7 @@ impl<'s> MirError<'s> {
       MirError::InvalidNumericValue(value) => {
         RcDoc::text(format!("Invalid numeric value: {}", value))
       }
+      MirError::UndefinedVariable(var) => RcDoc::text(format!("Undefined variable: {}", var)),
     }
   }
 }

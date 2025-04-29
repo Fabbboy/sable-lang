@@ -6,11 +6,11 @@ use crate::mir::value::Value;
 pub struct DefineInst<'s> {
   name: &'s str,
   type_: ValType,
-  value: Value,
+  value: Value<'s>,
 }
 
-impl<'a> DefineInst<'a> {
-  pub fn new(name: &'a str, type_: ValType, value: Value) -> Self {
+impl<'s> DefineInst<'s> {
+  pub fn new(name: &'s str, type_: ValType, value: Value<'s>) -> Self {
     Self { name, type_, value }
   }
 

@@ -44,7 +44,7 @@ impl<'s> Lowering<'s> {
   fn lower_literal_expression(
     &mut self,
     literal_expression: &LiteralExpression<'s>,
-  ) -> Result<Value, MirError<'s>> {
+  ) -> Result<Value<'s>, MirError<'s>> {
     match literal_expression.get_type() {
       ValType::Untyped => Err(MirError::ValueMustBeTyped),
       ValType::I32 => {
@@ -69,7 +69,7 @@ impl<'s> Lowering<'s> {
     }
   }
 
-  fn lower_null_expression(&mut self) -> Value {
+  fn lower_null_expression(&mut self) -> Value<'s> {
     Value::Constant(Constant::Null)
   }
 
@@ -77,9 +77,13 @@ impl<'s> Lowering<'s> {
     &mut self,
     assign_expression: &AssignExpression<'s>,
     builder: &mut MirBuilder<'s, '_>,
-  ) -> Result<Value, MirError<'s>> {
+  ) -> Result<Value<'s>, MirError<'s>> {
     match assign_expression.get_asignee() {
-      Some(name) => unreachable!(),
+      Some(name) => {
+        let value = self.lower_expression(assign_expression.get_value(), builder)?;
+        let assign = builder.create_assign(name, value)?;
+        Ok(assign)
+      }
       None => self.lower_expression(assign_expression.get_value(), builder),
     }
   }
@@ -88,7 +92,7 @@ impl<'s> Lowering<'s> {
     &mut self,
     expression: &Expression<'s>,
     builder: &mut MirBuilder<'s, '_>,
-  ) -> Result<Value, MirError<'s>> {
+  ) -> Result<Value<'s>, MirError<'s>> {
     match expression {
       Expression::LiteralExpression(literal_expression) => {
         self.lower_literal_expression(literal_expression)
@@ -97,7 +101,7 @@ impl<'s> Lowering<'s> {
       Expression::AssignExpression(assign_expression) => {
         self.lower_assign_expression(assign_expression, builder)
       }
-      Expression::VariableExpression(variable_expression) => todo!(),
+      Expression::VariableExpression(variable_expression) => Ok(Value::Str(variable_expression.get_name())),
       Expression::BinaryExpression(binary_expression) => todo!(),
       Expression::NullExpression(_) => Ok(self.lower_null_expression()),
       Expression::CallExpression(call_expression) => todo!(),
@@ -108,7 +112,7 @@ impl<'s> Lowering<'s> {
     &mut self,
     let_statement: &LetStatement<'s>,
     builder: &mut MirBuilder<'s, '_>,
-  ) -> Result<Value, MirError<'s>> {
+  ) -> Result<Value<'s>, MirError<'s>> {
     let value = match let_statement.get_assignee() {
       Some(assign_expression) => self.lower_assign_expression(assign_expression, builder),
       None => Ok(Value::Constant(Constant::Null)),
