@@ -7,11 +7,11 @@ use std::{
 use sable_parser::{
   ast::{
     ast::AST,
-    expression::{AssignExpression, Expression, LiteralExpression},
+    expression::{AssignExpression, BinaryExpression, Expression, LiteralExpression},
     function::Function,
     statement::{LetStatement, Statement},
   },
-  info::ValType,
+  info::{OperatorType, ValType},
 };
 use smallvec::{SmallVec, smallvec};
 
@@ -88,6 +88,34 @@ impl<'s> Lowering<'s> {
     }
   }
 
+  fn lower_binary_expression(
+    &mut self,
+    binary_expression: &BinaryExpression<'s>,
+    builder: &mut MirBuilder<'s, '_>,
+  ) -> Result<Value<'s>, MirError<'s>> {
+    let lhs = self.lower_expression(binary_expression.get_left(), builder)?;
+    let rhs = self.lower_expression(binary_expression.get_right(), builder)?;
+
+    match binary_expression.get_operator() {
+      OperatorType::Add => {
+        let inst = builder.create_add(lhs, rhs)?;
+        Ok(inst)
+      }
+      OperatorType::Sub => {
+        let inst = builder.create_sub(lhs, rhs)?;
+        Ok(inst)
+      }
+      OperatorType::Mul => {
+        let inst = builder.create_mul(lhs, rhs)?;
+        Ok(inst)
+      }
+      OperatorType::Div => {
+        let inst = builder.create_div(lhs, rhs)?;
+        Ok(inst)
+      }
+    }
+  }
+
   fn lower_expression(
     &mut self,
     expression: &Expression<'s>,
@@ -101,8 +129,12 @@ impl<'s> Lowering<'s> {
       Expression::AssignExpression(assign_expression) => {
         self.lower_assign_expression(assign_expression, builder)
       }
-      Expression::VariableExpression(variable_expression) => Ok(Value::Str(variable_expression.get_name())),
-      Expression::BinaryExpression(binary_expression) => todo!(),
+      Expression::VariableExpression(variable_expression) => {
+        Ok(Value::Str(variable_expression.get_name()))
+      }
+      Expression::BinaryExpression(binary_expression) => {
+        self.lower_binary_expression(binary_expression, builder)
+      }
       Expression::NullExpression(_) => Ok(self.lower_null_expression()),
       Expression::CallExpression(call_expression) => todo!(),
     }
