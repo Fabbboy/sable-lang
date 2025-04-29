@@ -1,21 +1,22 @@
 use std::{
   cell::{Ref, RefCell},
+  collections::HashMap,
   rc::Rc,
 };
 
 use sable_parser::{
   ast::{
     ast::AST,
-    expression::{Expression, LiteralExpression},
+    expression::{AssignExpression, Expression, LiteralExpression},
     function::Function,
-    statement::Statement,
+    statement::{LetStatement, Statement},
   },
   info::ValType,
 };
 use smallvec::{SmallVec, smallvec};
 
 use crate::mir::{
-  builder::MirBuilder,
+  builder::{self, MirBuilder},
   error::MirError,
   function::{MirBlock, MirFunction},
   module::MirModule,
@@ -55,8 +56,31 @@ impl<'s> Lowering<'s> {
           )),
         }
       }
-      ValType::F32 => todo!(),
-      ValType::Void => todo!(),
+      ValType::F32 => {
+        let value = literal_expression.get_value().parse::<f64>();
+        match value {
+          Ok(value) => Ok(Value::Constant(Constant::Float(value))),
+          Err(_) => Err(MirError::InvalidNumericValue(
+            literal_expression.get_value(),
+          )),
+        }
+      }
+      ValType::Void => Ok(Value::Constant(Constant::Null)),
+    }
+  }
+
+  fn lower_null_expression(&mut self) -> Value {
+    Value::Constant(Constant::Null)
+  }
+
+  fn lower_assign_expression(
+    &mut self,
+    assign_expression: &AssignExpression<'s>,
+    builder: &mut MirBuilder<'s, '_>,
+  ) -> Result<Value, MirError<'s>> {
+    match assign_expression.get_asignee() {
+      Some(name) => unreachable!(),
+      None => self.lower_expression(assign_expression.get_value(), builder),
     }
   }
 
@@ -70,12 +94,37 @@ impl<'s> Lowering<'s> {
         self.lower_literal_expression(literal_expression)
       }
       Expression::BlockExpression(block_expression) => todo!(),
-      Expression::AssignExpression(assign_expression) => todo!(),
+      Expression::AssignExpression(assign_expression) => {
+        self.lower_assign_expression(assign_expression, builder)
+      }
       Expression::VariableExpression(variable_expression) => todo!(),
       Expression::BinaryExpression(binary_expression) => todo!(),
-      Expression::NullExpression(null_expression) => todo!(),
+      Expression::NullExpression(_) => Ok(self.lower_null_expression()),
       Expression::CallExpression(call_expression) => todo!(),
     }
+  }
+
+  fn lower_let_statement(
+    &mut self,
+    let_statement: &LetStatement<'s>,
+    builder: &mut MirBuilder<'s, '_>,
+  ) -> Result<Value, MirError<'s>> {
+    let value = match let_statement.get_assignee() {
+      Some(assign_expression) => self.lower_assign_expression(assign_expression, builder),
+      None => Ok(Value::Constant(Constant::Null)),
+    };
+
+    if value.is_err() {
+      return Err(value.unwrap_err());
+    }
+    let value = value.unwrap();
+    let inst = builder.create_define(
+      let_statement.get_name(),
+      let_statement.get_type().clone(),
+      value,
+    )?;
+
+    Ok(inst)
   }
 
   fn lower_statement(
@@ -92,7 +141,13 @@ impl<'s> Lowering<'s> {
         }
       }
       Statement::ReturnStatement(return_statement) => todo!(),
-      Statement::LetStatement(let_statement) => todo!(),
+      Statement::LetStatement(let_statement) => {
+        let res = self.lower_let_statement(let_statement, builder);
+        match res {
+          Ok(_) => Ok(()),
+          Err(err) => Err(err),
+        }
+      }
     }
   }
 

@@ -3,7 +3,7 @@ use crate::mir::instruction::Instruction;
 #[derive(Debug)]
 pub struct MirBlock<'s> {
   name: &'s str,
-  instruction: Vec<Instruction>,
+  instruction: Vec<Instruction<'s>>,
 }
 
 impl<'s> MirBlock<'s> {
@@ -18,11 +18,11 @@ impl<'s> MirBlock<'s> {
     self.name
   }
 
-  pub fn instructions(&self) -> &[Instruction] {
+  pub fn instructions(&self) -> &[Instruction<'s>] {
     &self.instruction
   }
 
-  pub fn add_instruction(&mut self, instruction: Instruction) -> usize {
+  pub fn add_instruction(&mut self, instruction: Instruction<'s>) -> usize {
     self.instruction.push(instruction);
     self.instruction.len() - 1
   }

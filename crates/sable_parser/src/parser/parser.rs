@@ -104,7 +104,10 @@ impl<'s> Parser<'s> {
     }
   }
 
-  fn parse_assign(&mut self, name: &'s str) -> Result<AssignExpression<'s>, ParserError<'s>> {
+  fn parse_assign(
+    &mut self,
+    name: Option<&'s str>,
+  ) -> Result<AssignExpression<'s>, ParserError<'s>> {
     let tok = next!(@plain self, [TokenType::Assign]);
     let expr = self.parse_expression()?;
     let pos = tok.pos.merge(expr.get_pos());
@@ -145,7 +148,7 @@ impl<'s> Parser<'s> {
       TokenType::Identifier => {
         let name = tok.lexeme;
         if self.peek(smallvec![TokenType::Assign]) {
-          let expr = self.parse_assign(name)?;
+          let expr = self.parse_assign(Some(name))?;
           return Ok(Expression::AssignExpression(expr));
         } else if self.peek(smallvec![TokenType::Paren(true)]) {
           let expr = self.parse_call_expr(tok)?;
@@ -219,7 +222,7 @@ impl<'s> Parser<'s> {
     }
 
     if self.peek(smallvec![TokenType::Assign]) {
-      let expr = self.parse_assign(name.lexeme)?;
+      let expr = self.parse_assign(None)?;
       let pos = type_.pos.merge(name.pos).merge(expr.get_pos());
       let var_decl = LetStatement::new(ty, name.lexeme, Some(expr), pos);
       next!(@plain self, [TokenType::Semicolon]);

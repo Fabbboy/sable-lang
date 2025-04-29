@@ -5,13 +5,13 @@ use super::Expression;
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub struct AssignExpression<'s> {
-  asignee: &'s str,
+  asignee: Option<&'s str>,
   value: Box<Expression<'s>>,
   pos: Position,
 }
 
 impl<'s> AssignExpression<'s> {
-  pub fn new(asignee: &'s str, value: Expression<'s>, pos: Position) -> Self {
+  pub fn new(asignee: Option<&'s str>, value: Expression<'s>, pos: Position) -> Self {
     Self {
       asignee,
       value: Box::new(value),
@@ -23,7 +23,7 @@ impl<'s> AssignExpression<'s> {
     self.pos.clone()
   }
 
-  pub fn get_asignee(&self) -> &'s str {
+  pub fn get_asignee(&self) -> Option<&'s str> {
     self.asignee
   }
 

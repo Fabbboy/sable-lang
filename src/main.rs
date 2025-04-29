@@ -5,8 +5,7 @@ use sable_sema::sema::Sema;
 
 const SOURCE: &str = r#"
 func i32 add(i32 x, i32 y) {
-  let i32 xy = x + add(x, y);
-  return xy;
+  let i32 xy = 2;
 }
 "#;
 const FILENAME: &str = "test.sbl";
