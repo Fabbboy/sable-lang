@@ -51,7 +51,11 @@ fn main() {
       println!("Lowered MIR: {:#?}", mir_mod);
     }
     Err(errors) => {
-      unimplemented!();
+      for error in errors {
+        let error = error.report();
+        let fmt = error.pretty(80);
+        println!("Error: {fmt}");
+      }
     }
   }
 }
