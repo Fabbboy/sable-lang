@@ -1,6 +1,9 @@
 use std::cell::RefMut;
 
-use crate::mir::instruction::Instruction;
+use crate::mir::{
+  instruction::{Instruction, Terminator},
+  value::{Value, constant::Constant},
+};
 
 use super::MirFunction;
 
@@ -8,7 +11,7 @@ use super::MirFunction;
 pub struct MirBlock<'s> {
   name: &'s str,
   instruction: Vec<Instruction>,
-  terminator: Instruction,
+  terminator: Terminator,
 }
 
 impl<'s> MirBlock<'s> {
@@ -16,7 +19,7 @@ impl<'s> MirBlock<'s> {
     let block = MirBlock {
       name,
       instruction: vec![],
-      terminator: Instruction::Nop,
+      terminator: Terminator::Return(Value::Constant(Constant::Null)),
     };
     func.add_block(block)
   }
@@ -29,7 +32,7 @@ impl<'s> MirBlock<'s> {
     &self.instruction
   }
 
-  pub fn terminator(&self) -> &Instruction {
+  pub fn terminator(&self) -> &Terminator {
     &self.terminator
   }
 
