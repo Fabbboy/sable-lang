@@ -1,2 +1,4 @@
 #[derive(Debug)]
-pub enum Instruction {}
+pub enum Instruction {
+  Nop,
+}

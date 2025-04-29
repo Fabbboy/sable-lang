@@ -8,6 +8,7 @@ use super::MirFunction;
 pub struct MirBlock<'s> {
   name: &'s str,
   instruction: Vec<Instruction>,
+  terminator: Instruction,
 }
 
 impl<'s> MirBlock<'s> {
@@ -15,6 +16,7 @@ impl<'s> MirBlock<'s> {
     let block = MirBlock {
       name,
       instruction: vec![],
+      terminator: Instruction::Nop,
     };
     func.add_block(block)
   }
@@ -25,6 +27,10 @@ impl<'s> MirBlock<'s> {
 
   pub fn instructions(&self) -> &[Instruction] {
     &self.instruction
+  }
+
+  pub fn terminator(&self) -> &Instruction {
+    &self.terminator
   }
 
   pub fn add_instruction(&mut self, instruction: Instruction) -> usize {
