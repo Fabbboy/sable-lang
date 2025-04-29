@@ -49,9 +49,16 @@ fn main() {
   }
 
   let mut mir_mod = MirModule::new("test");
-  let main_idx = MirFunction::new(&mut mir_mod, "main");
-  let main_func = mir_mod.get_func_mut(main_idx).unwrap();
-  let entry_idx = MirBlock::new(main_func, "entry");
+  {
+    let add_idx = mir_mod.add_func(MirFunction::new("add"));
+    let add_blk_idx = {
+      let add_block = MirBlock::new("entry");
+      let mut add_func = mir_mod.get_func_mut(add_idx).unwrap();
+      add_func.add_block(add_block)
+    };
+    let mut add_builder = mir_mod.get_builder(add_idx).unwrap();
+    add_builder.set_insert(add_blk_idx).unwrap();
+  }
 
   println!("{:#?}", mir_mod);
 }

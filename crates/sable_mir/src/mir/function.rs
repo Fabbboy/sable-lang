@@ -1,9 +1,7 @@
-use std::cell::RefCell;
+use std::cell::{Ref, RefCell, RefMut};
 
 pub mod block;
 pub use block::MirBlock;
-
-use super::module::MirModule;
 
 #[derive(Debug)]
 pub struct MirFunction<'s> {
@@ -12,13 +10,11 @@ pub struct MirFunction<'s> {
 }
 
 impl<'s> MirFunction<'s> {
-  pub fn new<'m>(module: &'m mut MirModule<'s>, name: &'s str) -> usize {
-    let func = MirFunction {
+  pub fn new<'m>(name: &'s str) -> Self {
+    MirFunction {
       name,
       blocks: vec![],
-    };
-
-    module.add_func(func)
+    }
   }
 
   pub fn add_block(&mut self, block: MirBlock<'s>) -> usize {
@@ -29,5 +25,13 @@ impl<'s> MirFunction<'s> {
 
   pub fn name(&self) -> &str {
     self.name
+  }
+
+  pub fn get_block(&self, index: usize) -> Option<Ref<MirBlock<'s>>> {
+    self.blocks.get(index).map(|cell| cell.borrow())
+  }
+
+  pub fn get_block_mut(&mut self, index: usize) -> Option<RefMut<MirBlock<'s>>> {
+    self.blocks.get_mut(index).map(|cell| cell.borrow_mut())
   }
 }

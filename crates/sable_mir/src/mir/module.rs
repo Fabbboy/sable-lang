@@ -3,7 +3,7 @@ use std::{
   vec,
 };
 
-use super::function::MirFunction;
+use super::{builder::MirBuilder, function::MirFunction};
 
 #[derive(Debug)]
 pub struct MirModule<'s> {
@@ -35,5 +35,10 @@ impl<'s> MirModule<'s> {
 
   pub fn name(&self) -> &str {
     self.name
+  }
+
+  pub fn get_builder(&mut self, func_index: usize) -> Option<MirBuilder<'_, 's>> {
+    let func = self.get_func_mut(func_index)?;
+    Some(MirBuilder::new(func))
   }
 }
