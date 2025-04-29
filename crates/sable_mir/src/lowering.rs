@@ -3,7 +3,9 @@ use std::{
   rc::Rc,
 };
 
-use sable_parser::ast::{ast::AST, function::Function, statement::Statement};
+use sable_parser::ast::{
+  ast::AST, expression::Expression, function::Function, statement::Statement,
+};
 use smallvec::{SmallVec, smallvec};
 
 use crate::mir::{
@@ -11,6 +13,7 @@ use crate::mir::{
   error::MirError,
   function::{MirBlock, MirFunction},
   module::MirModule,
+  value::Value,
 };
 
 const MAX_FUNCS: usize = 8;
@@ -31,12 +34,24 @@ impl<'s> Lowering<'s> {
     }
   }
 
+  fn lower_expression(
+    &mut self,
+    expression: &Expression<'s>,
+    builder: &mut MirBuilder<'s, '_>,
+  ) -> Result<Value, MirError> {
+    todo!()
+  }
+
   fn lower_statement(
     &mut self,
     stmt: &Statement<'s>,
-    func: Rc<Function<'s>>,
+    builder: &mut MirBuilder<'s, '_>,
   ) -> Result<(), MirError> {
-    Ok(())
+    match stmt {
+      Statement::Expression(expression) => todo!(),
+      Statement::ReturnStatement(return_statement) => todo!(),
+      Statement::LetStatement(let_statement) => todo!(),
+    }
   }
 
   fn lower_function(
@@ -44,20 +59,23 @@ impl<'s> Lowering<'s> {
     func: Rc<Function<'s>>,
   ) -> Result<MirFunction<'s>, SmallVec<[MirError; MAX_ERRORS]>> {
     let mut errs = smallvec![];
+
+    let ast_block = func.get_body();
     let mut mir_func = MirFunction::new(func.get_name());
-    let block = func.get_body();
 
     let entry_block = MirBlock::new("entry");
     let entry_block_idx = mir_func.add_block(entry_block);
 
     let mut builder = MirBuilder::new(&mut mir_func);
-    let res = builder.set_insert(entry_block_idx);
-    if res.is_err() {
-      return Err(smallvec![MirError::BlockNotFound(entry_block_idx)]);
+    {
+      let res = builder.set_insert(entry_block_idx);
+      if res.is_err() {
+        return Err(smallvec![MirError::BlockNotFound(entry_block_idx)]);
+      }
     }
-
-    for stmt in block.get_stmts() {
-      let res = self.lower_statement(stmt, func.clone());
+    for stmt in ast_block.get_stmts() {
+      let stmt = stmt;
+      let res = self.lower_statement(stmt, &mut builder);
       match res {
         Ok(_) => {}
         Err(err) => {

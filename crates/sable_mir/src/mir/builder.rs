@@ -30,7 +30,7 @@ impl<'s, 'b> MirBuilder<'s, 'b> {
     }
   }
 
-  pub fn set_insert(&'b mut self, block: usize) -> Result<(), MirError> {
+  pub fn set_insert(&mut self, block: usize) -> Result<(), MirError> {
     if self.func.get_block(block).is_none() {
       return Err(MirError::BlockNotFound(block));
     }
