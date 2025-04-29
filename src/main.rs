@@ -1,4 +1,8 @@
 use ariadne::Source;
+use sable_mir::mir::{
+  function::{MirBlock, MirFunction},
+  module::MirModule,
+};
 use sable_parser::{lexer::lexer::Lexer, parser::parser::Parser};
 use sable_sema::sema::Sema;
 
@@ -43,4 +47,11 @@ fn main() {
       }
     }
   }
+
+  let mut mir_mod = MirModule::new("test");
+  let main_idx = MirFunction::new(&mut mir_mod, "main");
+  let main_func = mir_mod.get_func_mut(main_idx).unwrap();
+  let entry_idx = MirBlock::new(main_func, "entry");
+
+  println!("{:#?}", mir_mod);
 }
