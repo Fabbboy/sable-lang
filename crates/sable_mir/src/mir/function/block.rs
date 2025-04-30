@@ -19,7 +19,7 @@ impl<'ctx> MirBlock<'ctx> {
 
   pub fn expand(&mut self, inst: MirInstId) {
     if self.range.end < inst.0 {
-      self.range.end = inst.0;
+      self.range.end = inst.0 + 1;
     }
   }
 

@@ -60,4 +60,8 @@ impl<'ctx> MirFunction<'ctx> {
   pub fn get_block(&self, id: MirBlockId) -> Option<&MirBlock<'ctx>> {
     self.blocks.get(id.0)
   }
+
+  pub fn get_block_mut(&mut self, id: MirBlockId) -> Option<&mut MirBlock<'ctx>> {
+    self.blocks.get_mut(id.0)
+  }
 }
