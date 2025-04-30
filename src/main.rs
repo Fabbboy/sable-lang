@@ -52,6 +52,8 @@ fn main() {
 
   match res {
     Ok(mir_mod) => println!("{:#?}", mir_mod),
-    Err(errors) => for error in errors {},
+    Err(errors) => for error in errors {
+      println!("{:#?}", error);
+    },
   }
 }
