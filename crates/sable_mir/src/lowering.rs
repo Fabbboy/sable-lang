@@ -1,6 +1,8 @@
 use std::{cell::RefCell, rc::Rc};
 
-use sable_parser::ast::{ast::AST, expression::Expression, function::Function, statement::Statement};
+use sable_parser::ast::{
+  ast::AST, expression::Expression, function::Function, statement::Statement,
+};
 use smallvec::SmallVec;
 
 use crate::{
@@ -55,7 +57,15 @@ impl<'ctx> Lowerer<'ctx> {
     expr: &Expression<'ctx>,
     builder: &mut Builder<'ctx>,
   ) -> Result<(), Vec<LoweringError>> {
-    Ok(())
+    match expr {
+      Expression::LiteralExpression(literal_expression) => todo!(),
+      Expression::BlockExpression(block_expression) => todo!(),
+      Expression::AssignExpression(assign_expression) => todo!(),
+      Expression::VariableExpression(variable_expression) => todo!(),
+      Expression::BinaryExpression(binary_expression) => todo!(),
+      Expression::NullExpression(null_expression) => todo!(),
+      Expression::CallExpression(call_expression) => todo!(),
+    }
   }
 
   fn lower_statement(
