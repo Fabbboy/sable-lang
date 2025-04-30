@@ -1,4 +1,5 @@
 use block::{MirBlock, MirBlockId};
+use sable_parser::info::ValType;
 
 use super::instruction::{Instruction, MirInstId};
 
@@ -12,6 +13,7 @@ pub struct MirFunction<'ctx> {
   name: &'ctx str,
   instructions: Vec<Instruction>,
   blocks: Vec<MirBlock<'ctx>>,
+  params: Vec<ValType>,
 }
 
 impl<'ctx> MirFunction<'ctx> {
@@ -20,6 +22,7 @@ impl<'ctx> MirFunction<'ctx> {
       name,
       instructions: Vec::new(),
       blocks: Vec::new(),
+      params: Vec::new(),
     }
   }
 
@@ -37,6 +40,10 @@ impl<'ctx> MirFunction<'ctx> {
     let id = MirBlockId(self.blocks.len());
     self.blocks.push(block);
     id
+  }
+
+  pub fn add_param(&mut self, param: ValType) {
+    self.params.push(param);
   }
 
   pub fn get_insts(&self, blk: MirBlockId) -> &[Instruction] {

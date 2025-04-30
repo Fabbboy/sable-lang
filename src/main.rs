@@ -5,7 +5,7 @@ use sable_sema::sema::Sema;
 
 const SOURCE: &str = r#"
 func i32 add(i32 x, i32 y) {
-  let i32 z = 420 * 2;
+  let i32 z = x + y;
   let i32 xy = 69 + z;
   xy = 2;
 }

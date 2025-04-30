@@ -24,11 +24,17 @@ use crate::{
 
 const MAX_INLINE_FUNCS: usize = 20;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum NamendPlace {
+  Inst(MirInstId),
+  Param(usize),
+}
+
 pub struct Lowerer<'ctx> {
   mir_mod: Rc<RefCell<MirModule<'ctx>>>,
   ast: Rc<RefCell<AST<'ctx>>>,
   errors: Vec<LoweringError<'ctx>>,
-  namend: HashMap<&'ctx str, (ValType, MirInstId)>,
+  namend: HashMap<&'ctx str, (ValType, NamendPlace)>,
 }
 
 impl<'ctx> Lowerer<'ctx> {
@@ -110,6 +116,7 @@ impl<'ctx> Lowerer<'ctx> {
           .lower_expression(assign_expression.get_value(), builder)?
           .unwrap();
         let loaded_value = builder.build_load(type_.clone(), inst.clone());
+
         builder.build_store(loaded_value, value);
         Ok(None)
       }
@@ -212,7 +219,10 @@ impl<'ctx> Lowerer<'ctx> {
     builder.build_store(store_loc, value);
     self.namend.insert(
       let_statement.get_name(),
-      (let_statement.get_type().clone(), store_loc),
+      (
+        let_statement.get_type().clone(),
+        NamendPlace::Inst(store_loc),
+      ),
     );
 
     Ok(())
@@ -244,7 +254,13 @@ impl<'ctx> Lowerer<'ctx> {
         }
         Ok(())
       }
-      Statement::ReturnStatement(return_statement) => todo!(),
+      Statement::ReturnStatement(return_statement) => {
+        let res = self.lower_ret_inst(return_statement, builder);
+        if let Err(err) = res {
+          return Err(err);
+        }
+        Ok(())
+      }
       Statement::LetStatement(let_statement) => {
         let res = self.lower_let_stmt(let_statement, builder);
         if let Err(err) = res {
@@ -256,11 +272,34 @@ impl<'ctx> Lowerer<'ctx> {
     }
   }
 
-  fn lower_func(&mut self, func: Rc<RefCell<Function<'ctx>>>) -> Result<(), Vec<LoweringError<'ctx>>> {
+  fn lower_func(
+    &mut self,
+    func: Rc<RefCell<Function<'ctx>>>,
+  ) -> Result<(), Vec<LoweringError<'ctx>>> {
+    self.namend.clear();
     let mut errors = Vec::new();
 
     let mir_func = MirFunction::new(func.borrow().get_name());
     let func_id = self.mir_mod.borrow_mut().add_func(mir_func);
+
+    for (i, param) in func.borrow().get_params().iter().enumerate() {
+      let param_type = param.get_val_type();
+      let param_name = param.get_name();
+      self
+        .mir_mod
+        .borrow_mut()
+        .get_func_mut(func_id)
+        .unwrap()
+        .add_param(param_type.clone());
+
+      self.namend.insert(
+        param_name,
+        (
+          param_type.clone(),
+          NamendPlace::Param(func.borrow().get_params().len() - i - 1),
+        ),
+      );
+    }
 
     let entry_block = MirBlock::new("entry", self.get_last_inst(func_id));
     let entry_block_id = self

@@ -2,6 +2,8 @@ use std::{cell::RefCell, rc::Rc};
 
 use sable_parser::info::ValType;
 
+use crate::lowering::NamendPlace;
+
 use super::{
   function::{block::MirBlockId, MirFunctionId},
   instruction::{
@@ -49,7 +51,7 @@ impl<'ctx> Builder<'ctx> {
     func.get_block_mut(block_id).unwrap().expand(inst_id);
   }
 
-  pub fn build_load(&mut self, by: ValType, from: MirInstId) -> MirInstId {
+  pub fn build_load(&mut self, by: ValType, from: NamendPlace) -> MirInstId {
     let mut module = self.module.borrow_mut();
     let func = module.get_func_mut(self.selected_fn).unwrap();
     let inst = Instruction::Load(LoadInst::new(by, from));
