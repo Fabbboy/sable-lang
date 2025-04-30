@@ -3,7 +3,9 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 use sable_parser::{
   ast::{
     ast::AST,
-    expression::{AssignExpression, BinaryExpression, Expression, LiteralExpression},
+    expression::{
+      AssignExpression, BinaryExpression, CallExpression, Expression, LiteralExpression,
+    },
     function::Function,
     statement::{LetStatement, ReturnStatement, Statement},
   },
@@ -35,6 +37,7 @@ pub struct Lowerer<'ctx> {
   ast: Rc<RefCell<AST<'ctx>>>,
   errors: Vec<LoweringError<'ctx>>,
   namend: HashMap<&'ctx str, (ValType, NamendPlace)>,
+  funcs: HashMap<&'ctx str, MirFunctionId>,
 }
 
 impl<'ctx> Lowerer<'ctx> {
@@ -44,6 +47,7 @@ impl<'ctx> Lowerer<'ctx> {
       ast,
       errors: Vec::new(),
       namend: HashMap::new(),
+      funcs: HashMap::new(),
     }
   }
 
@@ -164,6 +168,36 @@ impl<'ctx> Lowerer<'ctx> {
     Ok(res)
   }
 
+  fn lower_call_expression(
+    &mut self,
+    call_expression: &CallExpression<'ctx>,
+    builder: &mut Builder<'ctx>,
+  ) -> Result<MirValue, LoweringError<'ctx>> {
+    let callee = call_expression.get_callee();
+    let func_id = match self.funcs.get(callee) {
+      Some(v) => v.clone(),
+      None => return Err(LoweringError::FunctionNotFound(callee)),
+    };
+
+    self
+      .mir_mod
+      .borrow()
+      .get_func(func_id.clone())
+      .ok_or(LoweringError::FunctionNotFound(callee))?;
+
+    let mut args = Vec::new();
+    for arg in call_expression.get_args() {
+      let arg = self.lower_expression(arg, builder)?;
+      if let Some(arg) = arg {
+        args.push(arg);
+      }
+    }
+
+    let call_inst = builder.build_call(func_id, args);
+    let call_value = MirValue::Inst(call_inst);
+    Ok(call_value)
+  }
+
   fn lower_expression(
     &mut self,
     expr: &Expression<'ctx>,
@@ -197,7 +231,9 @@ impl<'ctx> Lowerer<'ctx> {
         self.lower_binary_expression(binary_expression, builder)?,
       )),
       Expression::NullExpression(_) => Ok(Some(MirValue::Constant(Constant::Null))),
-      Expression::CallExpression(call_expression) => todo!(),
+      Expression::CallExpression(call_expression) => {
+        Ok(Some(self.lower_call_expression(call_expression, builder)?))
+      }
     }
   }
 
@@ -281,6 +317,8 @@ impl<'ctx> Lowerer<'ctx> {
 
     let mir_func = MirFunction::new(func.borrow().get_name());
     let func_id = self.mir_mod.borrow_mut().add_func(mir_func);
+
+    self.funcs.insert(func.borrow().get_name(), func_id);
 
     for (i, param) in func.borrow().get_params().iter().enumerate() {
       let param_type = param.get_val_type();

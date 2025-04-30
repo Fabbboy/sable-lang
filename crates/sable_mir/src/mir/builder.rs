@@ -5,9 +5,12 @@ use sable_parser::info::ValType;
 use crate::lowering::NamendPlace;
 
 use super::{
-  function::{block::MirBlockId, MirFunctionId},
+  function::{MirFunctionId, block::MirBlockId},
   instruction::{
-    alloca::AllocaInst, binary::{DivInst, SubInst}, ret::ReturnInst, AddInst, Instruction, LoadInst, MirInstId, MulInst, StoreInst
+    AddInst, CallInst, Instruction, LoadInst, MirInstId, MulInst, StoreInst,
+    alloca::AllocaInst,
+    binary::{DivInst, SubInst},
+    ret::ReturnInst,
   },
   module::MirModule,
   value::MirValue,
@@ -108,5 +111,15 @@ impl<'ctx> Builder<'ctx> {
     let inst_id = func.add_inst(inst);
     let block_id = self.selected.unwrap();
     func.get_block_mut(block_id).unwrap().expand(inst_id);
+  }
+
+  pub fn build_call(&mut self, callee: MirFunctionId, args: Vec<MirValue>) -> MirInstId {
+    let mut module = self.module.borrow_mut();
+    let func = module.get_func_mut(self.selected_fn).unwrap();
+    let inst = Instruction::Call(CallInst::new(callee, args));
+    let inst_id = func.add_inst(inst);
+    let block_id = self.selected.unwrap();
+    func.get_block_mut(block_id).unwrap().expand(inst_id);
+    inst_id
   }
 }

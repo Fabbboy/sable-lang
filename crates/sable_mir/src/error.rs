@@ -5,4 +5,5 @@ pub enum LoweringError<'ctx> {
   InvalidNumericValue(&'ctx str),
   IllegalType(ValType),
   VariableNotFound(&'ctx str),
+  FunctionNotFound(&'ctx str),
 }
