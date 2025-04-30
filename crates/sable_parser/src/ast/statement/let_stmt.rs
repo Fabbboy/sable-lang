@@ -32,6 +32,10 @@ impl<'s> LetStatement<'s> {
     &self.assignee
   }
 
+  pub fn get_assignee_mut(&mut self) -> &mut Option<AssignExpression<'s>> {
+    &mut self.assignee
+  }
+
   pub fn get_name(&self) -> &'s str {
     self.name
   }

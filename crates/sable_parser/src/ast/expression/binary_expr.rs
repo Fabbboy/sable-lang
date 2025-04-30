@@ -30,12 +30,20 @@ impl<'s> BinaryExpression<'s> {
     self.pos.clone()
   }
 
-  pub fn get_left(&self) -> &Expression<'s> {
-    &self.left
+  pub fn get_left_mut(&mut self) -> &mut Expression<'s> {
+    &mut self.left
   }
 
   pub fn get_operator(&self) -> &OperatorType {
     &self.operator
+  }
+
+  pub fn get_right_mut(&mut self) -> &mut Expression<'s> {
+    &mut self.right
+  }
+
+  pub fn get_left(&self) -> &Expression<'s> {
+    &self.left
   }
 
   pub fn get_right(&self) -> &Expression<'s> {

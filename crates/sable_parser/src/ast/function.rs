@@ -75,6 +75,10 @@ impl<'s> Function<'s> {
     &self.body
   }
 
+  pub fn get_body_mut(&mut self) -> &mut BlockExpression<'s> {
+    &mut self.body
+  }
+
   pub fn get_params(&self) -> &Vec<FunctionParameter<'s>> {
     &self.params
   }

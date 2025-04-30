@@ -25,18 +25,18 @@ impl<'s> Sema<'s> {
     }
   }
 
-  pub fn get_func(&self, idx: usize) -> Rc<Function<'s>> {
+  pub fn get_func(&self, idx: usize) -> Rc<RefCell<Function<'s>>> {
     let ast = self.ast.borrow();
     ast.get_funcs()[idx].clone()
   }
 
   fn check_block<'f>(
     &mut self,
-    block: &BlockExpression<'s>,
-    f: Rc<Function<'s>>,
+    block: &mut BlockExpression<'s>,
+    f: Rc<RefCell<Function<'s>>>,
   ) -> Result<(), Vec<AnalyzerError<'s>>> {
     let mut errors = Vec::new();
-    for (_, stmt) in block.get_stmts().iter().enumerate() {
+    for (_, stmt) in block.get_stmts_mut().iter_mut().enumerate() {
       match check_stmt(self, stmt, f.clone()) {
         Ok(_) => {}
         Err(err) => errors.push(err),
@@ -52,29 +52,30 @@ impl<'s> Sema<'s> {
 
   fn check_function(
     &mut self,
-    f: Rc<Function<'s>>,
+    f: Rc<RefCell<Function<'s>>>,
     i: usize,
   ) -> Result<(), Vec<AnalyzerError<'s>>> {
-    if self.funcs.contains_key(f.get_name()) {
-      let earlier = self.funcs[f.get_name()];
+    if self.funcs.contains_key(f.borrow().get_name()) {
+      let earlier = self.funcs[f.borrow().get_name()];
       let earlier_func = self.get_func(earlier);
       return Err(vec![AnalyzerError::FunctionAlreadyDefined(
         FunctionAlreadyDefined::new(
-          f.get_name(),
-          f.get_pos().clone(),
-          earlier_func.get_pos().clone(),
+          f.borrow().get_name(),
+          f.borrow().get_pos().clone(),
+          earlier_func.borrow().get_pos().clone(),
         ),
       )]);
     }
-    self.funcs.insert(f.get_name(), i);
+    self.funcs.insert(f.borrow().get_name(), i);
 
     self.resolver.enter_scope();
-    for arg in f.get_params() {
+    for arg in f.borrow().get_params() {
       let namend = NamendValue::new(arg.get_val_type().clone(), arg.get_pos().clone());
       self.resolver.define_var(arg.get_name(), namend);
     }
 
-    let block = f.get_body();
+    let mut binding = f.borrow_mut();
+    let block = binding.get_body_mut();
     let res = self.check_block(block, f.clone());
 
     self.resolver.exit_scope();
@@ -86,7 +87,7 @@ impl<'s> Sema<'s> {
   }
 
   pub fn analyze(&mut self) -> Result<(), &Vec<AnalyzerError<'s>>> {
-    let func_entries: Vec<(usize, Rc<Function<'s>>)> = {
+    let func_entries: Vec<(usize, Rc<RefCell<Function<'s>>>)> = {
       let ast_ref = self.ast.borrow();
       ast_ref
         .get_funcs()

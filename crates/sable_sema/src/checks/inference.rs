@@ -33,7 +33,7 @@ pub fn infer_call_expression<'s>(
   let func = analyzer.funcs.get(name);
   if let Some(func) = func {
     let func = analyzer.get_func(*func);
-    return func.get_ret_type().clone();
+    return func.borrow().get_ret_type().clone();
   }
   ValType::Untyped
 }

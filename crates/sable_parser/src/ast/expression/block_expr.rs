@@ -20,6 +20,10 @@ impl<'s> BlockExpression<'s> {
     &self.stmts
   }
 
+  pub fn get_stmts_mut(&mut self) -> &mut Vec<Statement<'s>> {
+    &mut self.stmts
+  }
+
   pub fn get_at(&self, idx: usize) -> Option<&Statement<'s>> {
     self.stmts.get(idx)
   }

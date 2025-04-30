@@ -30,4 +30,8 @@ impl<'s> AssignExpression<'s> {
   pub fn get_value(&self) -> &Expression<'s> {
     &self.value
   }
+
+  pub fn get_value_mut(&mut self) -> &mut Expression<'s> {
+    &mut self.value
+  }
 }

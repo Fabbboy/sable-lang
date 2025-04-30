@@ -2,6 +2,7 @@ pub mod alloca;
 pub mod store;
 pub mod load;
 pub mod binary;
+pub mod ret;
 
 pub use alloca::AllocaInst;
 pub use store::StoreInst;
@@ -20,6 +21,7 @@ pub enum Instruction {
   Sub(SubInst),
   Mul(MulInst),
   Div(DivInst),
+  Return(ret::ReturnInst),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

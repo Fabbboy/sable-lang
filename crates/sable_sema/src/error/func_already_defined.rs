@@ -60,7 +60,7 @@ mod tests {
     let ast_borrow = ast.borrow();
     let f = ast_borrow.get_funcs().get(0).unwrap();
 
-    let err = FunctionAlreadyDefined::new(f.get_name(), f.get_pos().clone(), f.get_pos().clone());
+    let err = FunctionAlreadyDefined::new(f.borrow().get_name(), f.borrow().get_pos().clone(), f.borrow().get_pos().clone());
     err
       .report(FILENAME)
       .print((FILENAME, Source::from(SOURCE)))

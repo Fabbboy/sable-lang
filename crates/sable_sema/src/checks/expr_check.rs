@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{cell::RefCell, rc::Rc};
 
 use sable_parser::ast::{
   expression::{
@@ -22,8 +22,8 @@ use super::stmt_check::check_stmt;
 
 pub fn check_expr<'s>(
   analyzer: &mut Sema<'s>,
-  expr: &Expression<'s>,
-  f: Rc<Function<'s>>,
+  expr: &mut Expression<'s>,
+  f: Rc<RefCell<Function<'s>>>,
 ) -> Result<(), AnalyzerError<'s>> {
   match expr {
     Expression::LiteralExpression(_) => Ok(()),
@@ -48,8 +48,8 @@ pub fn check_expr<'s>(
 
 pub fn check_call_expression<'s>(
   analyzer: &mut Sema<'s>,
-  call_expression: &CallExpression<'s>,
-  f: Rc<Function<'s>>,
+  call_expression: &mut CallExpression<'s>,
+  f: Rc<RefCell<Function<'s>>>,
 ) -> Result<(), AnalyzerError<'s>> {
   let name = call_expression.get_callee();
   let func_idx = analyzer.funcs.get(name);
@@ -63,13 +63,14 @@ pub fn check_call_expression<'s>(
   }
 
   let func = analyzer.get_func(*func_idx.unwrap());
-  let args = call_expression.get_args();
-  let params = func.get_params();
+  let args = call_expression.get_args_mut();
+  let binding = func.borrow();
+  let params = binding.get_params();
 
   if args.len() != params.len() {
     return Err(AnalyzerError::FuncError(
       FunctionCheckError::FunctionArgumentMismatch(FunctionArgumentMismatch::new(
-        func.get_name(),
+        func.borrow().get_name(),
         params.len(),
         args.len(),
         call_expression.get_pos().clone(),
@@ -77,7 +78,7 @@ pub fn check_call_expression<'s>(
     ));
   }
 
-  for (i, arg) in args.iter().enumerate() {
+  for (i, arg) in args.iter_mut().enumerate() {
     let res = check_expr(analyzer, arg, f.clone());
     if res.is_err() {
       return res;
@@ -96,11 +97,11 @@ pub fn check_call_expression<'s>(
 
 pub fn check_block_expression<'s>(
   analyzer: &mut Sema<'s>,
-  block_expression: &BlockExpression<'s>,
-  f: Rc<Function<'s>>,
+  block_expression: &mut BlockExpression<'s>,
+  f: Rc<RefCell<Function<'s>>>,
 ) -> Result<(), AnalyzerError<'s>> {
   analyzer.resolver.enter_scope();
-  for (_, stmt) in block_expression.get_stmts().iter().enumerate() {
+  for (_, stmt) in block_expression.get_stmts_mut().iter_mut().enumerate() {
     match check_stmt(analyzer, stmt, f.clone()) {
       Ok(_) => {}
       Err(err) => return Err(err),
@@ -111,11 +112,11 @@ pub fn check_block_expression<'s>(
 
 pub fn check_binary_expression<'s>(
   analyzer: &mut Sema<'s>,
-  binary_expression: &BinaryExpression<'s>,
-  f: Rc<Function<'s>>,
+  binary_expression: &mut BinaryExpression<'s>,
+  f: Rc<RefCell<Function<'s>>>,
 ) -> Result<(), AnalyzerError<'s>> {
-  let lhs_checked = check_expr(analyzer, binary_expression.get_left(), f.clone());
-  let rhs_checked = check_expr(analyzer, binary_expression.get_right(), f);
+  let lhs_checked = check_expr(analyzer, binary_expression.get_left_mut(), f.clone());
+  let rhs_checked = check_expr(analyzer, binary_expression.get_right_mut(), f);
 
   if lhs_checked.is_err() {
     return lhs_checked;
@@ -155,8 +156,8 @@ pub fn check_variable_expression<'s>(
 
 pub fn check_assign_expression<'s>(
   analyzer: &mut Sema<'s>,
-  assign_expression: &AssignExpression<'s>,
-  f: Rc<Function<'s>>,
+  assign_expression: &mut AssignExpression<'s>,
+  f: Rc<RefCell<Function<'s>>>,
 ) -> Result<(), AnalyzerError<'s>> {
-  return check_expr(analyzer, assign_expression.get_value(), f);
+  return check_expr(analyzer, assign_expression.get_value_mut(), f);
 }

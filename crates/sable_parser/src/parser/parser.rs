@@ -12,6 +12,7 @@ use crate::{
     function::{Function, FunctionParameter},
     statement::{LetStatement, ReturnStatement, Statement},
   },
+  info::ValType,
   lexer::{
     lexer::Lexer,
     token::{Token, TokenData, TokenType},
@@ -254,7 +255,7 @@ impl<'s> Parser<'s> {
         let expr = self.parse_expression()?;
         let pos = tok.pos.merge(expr.get_pos());
         next!(@plain self, [TokenType::Semicolon]);
-        let stmt = Statement::ReturnStatement(ReturnStatement::new(expr, pos));
+        let stmt = Statement::ReturnStatement(ReturnStatement::new(expr, ValType::Untyped, pos));
         Ok(stmt)
       }
       TokenType::Let => {

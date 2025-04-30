@@ -26,4 +26,8 @@ impl<'s> CallExpression<'s> {
   pub fn get_args(&self) -> &Vec<Expression<'s>> {
     &self.args
   }
+
+  pub fn get_args_mut(&mut self) -> &mut Vec<Expression<'s>> {
+    &mut self.args
+  }
 }

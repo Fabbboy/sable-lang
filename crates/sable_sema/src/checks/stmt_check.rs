@@ -1,9 +1,9 @@
-use std::rc::Rc;
+use std::{cell::RefCell, rc::Rc};
 
 use sable_parser::{
   ast::{
     function::Function,
-    statement::{LetStatement, Statement},
+    statement::{LetStatement, ReturnStatement, Statement},
   },
   info::ValType,
 };
@@ -21,8 +21,8 @@ use super::{expr_check::check_expr, inference::infer_expr};
 
 pub fn check_stmt<'s>(
   analyzer: &mut Sema<'s>,
-  stmt: &Statement<'s>,
-  f: Rc<Function<'s>>,
+  stmt: &mut Statement<'s>,
+  f: Rc<RefCell<Function<'s>>>,
 ) -> Result<(), AnalyzerError<'s>> {
   match stmt {
     Statement::Expression(expression) => check_expr(analyzer, expression, f),
@@ -33,20 +33,20 @@ pub fn check_stmt<'s>(
 
 pub fn check_ret_stmt<'s>(
   analyzer: &mut Sema<'s>,
-  ret_statement: &sable_parser::ast::statement::ReturnStatement<'s>,
-  f: Rc<Function<'s>>,
+  ret_statement: &mut ReturnStatement<'s>,
+  f: Rc<RefCell<Function<'s>>>,
 ) -> Result<(), AnalyzerError<'s>> {
-  let value = ret_statement.get_value();
-  check_expr(analyzer, &value, f.clone())?;
+  let mut value = ret_statement.get_value_mut();
+  check_expr(analyzer, &mut value, f.clone())?;
   let val_type = infer_expr(analyzer, value);
   if val_type == ValType::Void || val_type == ValType::Untyped {
     return Err(AnalyzerError::ExprError(ExprCheckError::IllegalNullVoid(
       IllegalNullUntyped::new(value.get_pos().clone()),
     )));
   }
-  if val_type != f.get_ret_type() {
+  if val_type != f.borrow().get_ret_type() {
     return Err(AnalyzerError::ExprError(ExprCheckError::TypeMismatch(
-      TypeMismatch::new(f.get_ret_type().clone(), val_type, value.get_pos().clone()),
+      TypeMismatch::new(f.borrow().get_ret_type().clone(), val_type, value.get_pos().clone()),
     )));
   }
 
@@ -55,8 +55,8 @@ pub fn check_ret_stmt<'s>(
 
 pub fn check_let_stmt<'s>(
   analyzer: &mut Sema<'s>,
-  let_statement: &LetStatement<'s>,
-  f: Rc<Function<'s>>,
+  let_statement: &mut LetStatement<'s>,
+  f: Rc<RefCell<Function<'s>>>,
 ) -> Result<(), AnalyzerError<'s>> {
   let name = let_statement.get_name();
   if analyzer.resolver.is_declared(name) {
@@ -74,8 +74,9 @@ pub fn check_let_stmt<'s>(
     )));
   }
 
-  if let Some(assignee) = let_statement.get_assignee() {
-    check_expr(analyzer, assignee.get_value(), f)?;
+  let statement_type = let_statement.get_type().clone();
+  if let Some(assignee) = let_statement.get_assignee_mut() {
+    check_expr(analyzer, assignee.get_value_mut(), f)?;
     let val_type = infer_expr(analyzer, assignee.get_value());
     if val_type == ValType::Void || val_type == ValType::Untyped {
       return Err(AnalyzerError::ExprError(ExprCheckError::IllegalNullVoid(
@@ -83,10 +84,10 @@ pub fn check_let_stmt<'s>(
       )));
     }
 
-    if val_type != let_statement.get_type().clone() {
+    if val_type != statement_type {
       return Err(AnalyzerError::ExprError(ExprCheckError::TypeMismatch(
         TypeMismatch::new(
-          let_statement.get_type().clone(),
+          statement_type.clone(),
           val_type,
           assignee.get_pos().clone(),
         ),

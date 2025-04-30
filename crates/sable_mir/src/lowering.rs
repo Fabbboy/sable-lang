@@ -5,7 +5,7 @@ use sable_parser::{
     ast::AST,
     expression::{AssignExpression, BinaryExpression, Expression, LiteralExpression},
     function::Function,
-    statement::{LetStatement, Statement},
+    statement::{LetStatement, ReturnStatement, Statement},
   },
   info::{OperatorType, ValType},
 };
@@ -15,7 +15,7 @@ use crate::{
   error::LoweringError,
   mir::{
     builder::Builder,
-    function::{block::MirBlock, MirFunction, MirFunctionId},
+    function::{MirFunction, MirFunctionId, block::MirBlock},
     instruction::MirInstId,
     module::MirModule,
     value::{Constant, MirValue},
@@ -106,13 +106,17 @@ impl<'ctx> Lowerer<'ctx> {
           None => return Err(LoweringError::VariableNotFound(assign_to)),
         };
 
-        let value = self.lower_expression(assign_expression.get_value(), builder)?.unwrap();
+        let value = self
+          .lower_expression(assign_expression.get_value(), builder)?
+          .unwrap();
         let loaded_value = builder.build_load(type_.clone(), inst.clone());
         builder.build_store(loaded_value, value);
         Ok(None)
       }
       None => {
-        let value = self.lower_expression(assign_expression.get_value(), builder)?.unwrap();
+        let value = self
+          .lower_expression(assign_expression.get_value(), builder)?
+          .unwrap();
         Ok(Some(value))
       }
     }
@@ -123,8 +127,12 @@ impl<'ctx> Lowerer<'ctx> {
     binary_expression: &BinaryExpression<'ctx>,
     builder: &mut Builder<'ctx>,
   ) -> Result<MirValue, LoweringError<'ctx>> {
-    let left = self.lower_expression(binary_expression.get_left(), builder)?.unwrap();
-    let right = self.lower_expression(binary_expression.get_right(), builder)?.unwrap();
+    let left = self
+      .lower_expression(binary_expression.get_left(), builder)?
+      .unwrap();
+    let right = self
+      .lower_expression(binary_expression.get_right(), builder)?
+      .unwrap();
 
     let op = binary_expression.get_operator();
     let res = match op {
@@ -158,7 +166,13 @@ impl<'ctx> Lowerer<'ctx> {
       Expression::LiteralExpression(literal_expression) => {
         Ok(Some(self.lower_literal_expression(literal_expression)?))
       }
-      Expression::BlockExpression(block_expression) => todo!(),
+      Expression::BlockExpression(block_expression) => {
+        let stmts = block_expression.get_stmts();
+        for stmt in stmts {
+          self.lower_statement(stmt, builder)?;
+        }
+        Ok(None)
+      }
       Expression::AssignExpression(assign_expression) => {
         self.lower_assign_expression(assign_expression, builder)?;
         Ok(None)
@@ -172,9 +186,9 @@ impl<'ctx> Lowerer<'ctx> {
           return Err(LoweringError::VariableNotFound(name));
         }
       }
-      Expression::BinaryExpression(binary_expression) => {
-        Ok(Some(self.lower_binary_expression(binary_expression, builder)?))
-      }
+      Expression::BinaryExpression(binary_expression) => Ok(Some(
+        self.lower_binary_expression(binary_expression, builder)?,
+      )),
       Expression::NullExpression(_) => Ok(Some(MirValue::Constant(Constant::Null))),
       Expression::CallExpression(call_expression) => todo!(),
     }
@@ -204,6 +218,19 @@ impl<'ctx> Lowerer<'ctx> {
     Ok(())
   }
 
+  fn lower_ret_inst(
+    &mut self,
+    return_statement: &ReturnStatement<'ctx>,
+    builder: &mut Builder<'ctx>,
+  ) -> Result<(), LoweringError<'ctx>> {
+    let val = self
+      .lower_expression(return_statement.get_value(), builder)?
+      .unwrap();
+
+    builder.build_return(return_statement.get_type(), val);
+    Ok(())
+  }
+
   fn lower_statement(
     &mut self,
     stmt: &Statement<'ctx>,
@@ -229,10 +256,10 @@ impl<'ctx> Lowerer<'ctx> {
     }
   }
 
-  fn lower_func(&mut self, func: Rc<Function<'ctx>>) -> Result<(), Vec<LoweringError<'ctx>>> {
+  fn lower_func(&mut self, func: Rc<RefCell<Function<'ctx>>>) -> Result<(), Vec<LoweringError<'ctx>>> {
     let mut errors = Vec::new();
 
-    let mir_func = MirFunction::new(func.get_name());
+    let mir_func = MirFunction::new(func.borrow().get_name());
     let func_id = self.mir_mod.borrow_mut().add_func(mir_func);
 
     let entry_block = MirBlock::new("entry", self.get_last_inst(func_id));
@@ -246,7 +273,8 @@ impl<'ctx> Lowerer<'ctx> {
     let mut builder = Builder::new(self.mir_mod.clone(), func_id);
     builder.set_selected(entry_block_id);
 
-    let stmts = func.get_body().get_stmts();
+    let binding = func.borrow();
+    let stmts = binding.get_body().get_stmts();
 
     for stmt in stmts {
       let res = self.lower_statement(&stmt, &mut builder);

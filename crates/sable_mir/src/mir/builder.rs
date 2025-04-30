@@ -3,11 +3,9 @@ use std::{cell::RefCell, rc::Rc};
 use sable_parser::info::ValType;
 
 use super::{
-  function::{MirFunctionId, block::MirBlockId},
+  function::{block::MirBlockId, MirFunctionId},
   instruction::{
-    AddInst, Instruction, LoadInst, MirInstId, MulInst, StoreInst,
-    alloca::AllocaInst,
-    binary::{DivInst, SubInst},
+    alloca::AllocaInst, binary::{DivInst, SubInst}, ret::ReturnInst, AddInst, Instruction, LoadInst, MirInstId, MulInst, StoreInst
   },
   module::MirModule,
   value::MirValue,
@@ -99,5 +97,14 @@ impl<'ctx> Builder<'ctx> {
     let block_id = self.selected.unwrap();
     func.get_block_mut(block_id).unwrap().expand(inst_id);
     inst_id
+  }
+
+  pub fn build_return(&mut self, type_: ValType, value: MirValue) {
+    let mut module = self.module.borrow_mut();
+    let func = module.get_func_mut(self.selected_fn).unwrap();
+    let inst = Instruction::Return(ReturnInst::new(value, type_));
+    let inst_id = func.add_inst(inst);
+    let block_id = self.selected.unwrap();
+    func.get_block_mut(block_id).unwrap().expand(inst_id);
   }
 }
