@@ -1,11 +1,12 @@
 use std::{cell::RefCell, rc::Rc};
 
-use sable_parser::ast::{ast::AST, function::Function};
+use sable_parser::ast::{ast::AST, function::Function, statement::Statement};
 use smallvec::SmallVec;
 
 use crate::{
   error::LoweringError,
   mir::{
+    builder::Builder,
     function::{MirFunction, MirFunctionId, block::MirBlock},
     instruction::MirInstId,
     module::MirModule,
@@ -15,7 +16,7 @@ use crate::{
 const MAX_INLINE_FUNCS: usize = 20;
 
 pub struct Lowerer<'ctx> {
-  mir_mod: MirModule<'ctx>,
+  mir_mod: Rc<RefCell<MirModule<'ctx>>>,
   ast: Rc<RefCell<AST<'ctx>>>,
   errors: Vec<LoweringError>,
 }
@@ -23,14 +24,16 @@ pub struct Lowerer<'ctx> {
 impl<'ctx> Lowerer<'ctx> {
   pub fn new(mir_mod: MirModule<'ctx>, ast: Rc<RefCell<AST<'ctx>>>) -> Self {
     Self {
-      mir_mod,
+      mir_mod: Rc::new(RefCell::new(mir_mod)),
       ast,
       errors: Vec::new(),
     }
   }
 
   fn get_last_inst(&self, func: MirFunctionId) -> MirInstId {
-    let func = match self.mir_mod.get_func(func) {
+    let module = self.mir_mod.borrow();
+
+    let func = match module.get_func(func) {
       Some(f) => f,
       None => return MirInstId(0),
     };
@@ -48,18 +51,43 @@ impl<'ctx> Lowerer<'ctx> {
     return MirInstId(lst_blk.range().end);
   }
 
-  pub fn lower_func(&mut self, func: Rc<Function<'ctx>>) -> Result<(), Vec<LoweringError>> {
+  fn lower_statement(
+    &mut self,
+    stmt: &Statement<'ctx>,
+    builder: &mut Builder<'ctx>,
+  ) -> Result<(), Vec<LoweringError>> {
+    match stmt {
+      Statement::Expression(expression) => todo!(),
+      Statement::ReturnStatement(return_statement) => todo!(),
+      Statement::LetStatement(let_statement) => todo!(),
+    }
+  }
+
+  fn lower_func(&mut self, func: Rc<Function<'ctx>>) -> Result<(), Vec<LoweringError>> {
     let mut errors = Vec::new();
 
     let mir_func = MirFunction::new(func.get_name());
-    let func_id = self.mir_mod.add_func(mir_func);
+    let func_id = self.mir_mod.borrow_mut().add_func(mir_func);
 
     let entry_block = MirBlock::new("entry", self.get_last_inst(func_id));
     let entry_block_id = self
       .mir_mod
+      .borrow_mut()
       .get_func_mut(func_id)
       .unwrap()
       .add_block(entry_block);
+
+    let mut builder = Builder::new(self.mir_mod.clone(), func_id);
+    builder.set_selected(entry_block_id);
+
+    let stmts = func.get_body().get_stmts();
+
+    for stmt in stmts {
+      let res = self.lower_statement(&stmt, &mut builder);
+      if let Err(errs) = res {
+        errors.extend(errs);
+      }
+    }
 
     if errors.is_empty() {
       Ok(())
@@ -68,7 +96,7 @@ impl<'ctx> Lowerer<'ctx> {
     }
   }
 
-  pub fn lower(&mut self) -> Result<&MirModule, &[LoweringError]> {
+  pub fn lower(&mut self) -> Result<Rc<RefCell<MirModule<'ctx>>>, &[LoweringError]> {
     let funcs = {
       let ast = self.ast.borrow();
       let funcs = ast
@@ -87,7 +115,7 @@ impl<'ctx> Lowerer<'ctx> {
     }
 
     if self.errors.is_empty() {
-      Ok(&self.mir_mod)
+      Ok(self.mir_mod.clone())
     } else {
       Err(&self.errors)
     }

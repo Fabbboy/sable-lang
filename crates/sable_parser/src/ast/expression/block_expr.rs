@@ -16,7 +16,7 @@ impl<'s> BlockExpression<'s> {
     self.pos.clone()
   }
 
-  pub fn get_stmts(&self) -> &Vec<Statement<'s>> {
+  pub fn get_stmts(&self) -> &[Statement<'s>] {
     &self.stmts
   }
 
