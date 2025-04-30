@@ -3,11 +3,11 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 use sable_parser::{
   ast::{
     ast::AST,
-    expression::{AssignExpression, Expression, LiteralExpression},
+    expression::{AssignExpression, BinaryExpression, Expression, LiteralExpression},
     function::Function,
     statement::{LetStatement, Statement},
   },
-  info::ValType,
+  info::{OperatorType, ValType},
 };
 use smallvec::SmallVec;
 
@@ -15,7 +15,7 @@ use crate::{
   error::LoweringError,
   mir::{
     builder::Builder,
-    function::{MirFunction, MirFunctionId, block::MirBlock},
+    function::{block::MirBlock, MirFunction, MirFunctionId},
     instruction::MirInstId,
     module::MirModule,
     value::{Constant, MirValue},
@@ -28,7 +28,7 @@ pub struct Lowerer<'ctx> {
   mir_mod: Rc<RefCell<MirModule<'ctx>>>,
   ast: Rc<RefCell<AST<'ctx>>>,
   errors: Vec<LoweringError<'ctx>>,
-  namend: HashMap<&'ctx str, MirInstId>,
+  namend: HashMap<&'ctx str, (ValType, MirInstId)>,
 }
 
 impl<'ctx> Lowerer<'ctx> {
@@ -98,32 +98,84 @@ impl<'ctx> Lowerer<'ctx> {
     &mut self,
     assign_expression: &AssignExpression<'ctx>,
     builder: &mut Builder<'ctx>,
-  ) -> Result<MirValue, LoweringError<'ctx>> {
+  ) -> Result<Option<MirValue>, LoweringError<'ctx>> {
     match assign_expression.get_asignee() {
-      Some(assign_to) => unimplemented!(),
+      Some(assign_to) => {
+        let (type_, inst) = match self.namend.get(assign_to).cloned() {
+          Some(v) => v,
+          None => return Err(LoweringError::VariableNotFound(assign_to)),
+        };
+
+        let value = self.lower_expression(assign_expression.get_value(), builder)?.unwrap();
+        let loaded_value = builder.build_load(type_.clone(), inst.clone());
+        builder.build_store(loaded_value, value);
+        Ok(None)
+      }
       None => {
-        let value = self.lower_expression(assign_expression.get_value(), builder)?;
-        Ok(value)
+        let value = self.lower_expression(assign_expression.get_value(), builder)?.unwrap();
+        Ok(Some(value))
       }
     }
+  }
+
+  fn lower_binary_expression(
+    &mut self,
+    binary_expression: &BinaryExpression<'ctx>,
+    builder: &mut Builder<'ctx>,
+  ) -> Result<MirValue, LoweringError<'ctx>> {
+    let left = self.lower_expression(binary_expression.get_left(), builder)?.unwrap();
+    let right = self.lower_expression(binary_expression.get_right(), builder)?.unwrap();
+
+    let op = binary_expression.get_operator();
+    let res = match op {
+      OperatorType::Add => {
+        let inst = builder.build_add(left, right);
+        MirValue::Inst(inst)
+      }
+      OperatorType::Sub => {
+        let inst = builder.build_sub(left, right);
+        MirValue::Inst(inst)
+      }
+      OperatorType::Mul => {
+        let inst = builder.build_mul(left, right);
+        MirValue::Inst(inst)
+      }
+      OperatorType::Div => {
+        let inst = builder.build_div(left, right);
+        MirValue::Inst(inst)
+      }
+    };
+
+    Ok(res)
   }
 
   fn lower_expression(
     &mut self,
     expr: &Expression<'ctx>,
     builder: &mut Builder<'ctx>,
-  ) -> Result<MirValue, LoweringError<'ctx>> {
+  ) -> Result<Option<MirValue>, LoweringError<'ctx>> {
     match expr {
       Expression::LiteralExpression(literal_expression) => {
-        self.lower_literal_expression(literal_expression)
+        Ok(Some(self.lower_literal_expression(literal_expression)?))
       }
       Expression::BlockExpression(block_expression) => todo!(),
       Expression::AssignExpression(assign_expression) => {
-        self.lower_assign_expression(assign_expression, builder)
+        self.lower_assign_expression(assign_expression, builder)?;
+        Ok(None)
       }
-      Expression::VariableExpression(variable_expression) => todo!(),
-      Expression::BinaryExpression(binary_expression) => todo!(),
-      Expression::NullExpression(null_expression) => Ok(MirValue::Constant(Constant::Null)),
+      Expression::VariableExpression(variable_expression) => {
+        let name = variable_expression.get_name();
+        if let Some((type_, inst)) = self.namend.get(name) {
+          let value = builder.build_load(type_.clone(), inst.clone());
+          return Ok(Some(MirValue::Inst(value)));
+        } else {
+          return Err(LoweringError::VariableNotFound(name));
+        }
+      }
+      Expression::BinaryExpression(binary_expression) => {
+        Ok(Some(self.lower_binary_expression(binary_expression, builder)?))
+      }
+      Expression::NullExpression(_) => Ok(Some(MirValue::Constant(Constant::Null))),
       Expression::CallExpression(call_expression) => todo!(),
     }
   }
@@ -136,15 +188,18 @@ impl<'ctx> Lowerer<'ctx> {
     let store_loc = builder.build_alloca(let_statement.get_type().clone());
     let value = match let_statement.get_assignee() {
       Some(v) => self.lower_assign_expression(v, builder),
-      None => Ok(MirValue::Constant(Constant::Null)),
+      None => Ok(Some(MirValue::Constant(Constant::Null))),
     };
 
     if let Err(err) = value {
       return Err(err);
     }
-    let value = value.unwrap();
+    let value = value.unwrap().unwrap();
     builder.build_store(store_loc, value);
-    self.namend.insert(let_statement.get_name(), store_loc);
+    self.namend.insert(
+      let_statement.get_name(),
+      (let_statement.get_type().clone(), store_loc),
+    );
 
     Ok(())
   }
