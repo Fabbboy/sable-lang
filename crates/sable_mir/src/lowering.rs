@@ -1,6 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
-use sable_parser::ast::{ast::AST, function::Function, statement::Statement};
+use sable_parser::ast::{ast::AST, expression::Expression, function::Function, statement::Statement};
 use smallvec::SmallVec;
 
 use crate::{
@@ -51,13 +51,26 @@ impl<'ctx> Lowerer<'ctx> {
     return MirInstId(lst_blk.range().end);
   }
 
+  fn lower_expression(
+    expr: &Expression<'ctx>,
+    builder: &mut Builder<'ctx>,
+  ) -> Result<(), Vec<LoweringError>> {
+    Ok(())
+  }
+
   fn lower_statement(
     &mut self,
     stmt: &Statement<'ctx>,
     builder: &mut Builder<'ctx>,
   ) -> Result<(), Vec<LoweringError>> {
     match stmt {
-      Statement::Expression(expression) => todo!(),
+      Statement::Expression(expression) => {
+        let res = Self::lower_expression(expression, builder);
+        if let Err(errs) = res {
+          return Err(errs);
+        }
+        Ok(())
+      }
       Statement::ReturnStatement(return_statement) => todo!(),
       Statement::LetStatement(let_statement) => todo!(),
     }
