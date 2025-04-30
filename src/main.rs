@@ -7,7 +7,7 @@ const SOURCE: &str = r#"
 func i32 add(i32 x, i32 y) {
   let i32 z = x + y;
   let i32 xy = 69 + z;
-  xy = add(1, 2);
+  return add(1, 2);
 }
 "#;
 const FILENAME: &str = "test.sbl";

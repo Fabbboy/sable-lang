@@ -30,30 +30,10 @@ impl<'s> Sema<'s> {
     ast.get_funcs()[idx].clone()
   }
 
-  fn check_block<'f>(
-    &mut self,
-    block: &mut BlockExpression<'s>,
-    f: Rc<RefCell<Function<'s>>>,
-  ) -> Result<(), Vec<AnalyzerError<'s>>> {
-    let mut errors = Vec::new();
-    for (_, stmt) in block.get_stmts_mut().iter_mut().enumerate() {
-      match check_stmt(self, stmt, f.clone()) {
-        Ok(_) => {}
-        Err(err) => errors.push(err),
-      }
-    }
-
-    if errors.is_empty() {
-      Ok(())
-    } else {
-      Err(errors)
-    }
-  }
-
-  fn check_function(
+  pub fn check_function(
     &mut self,
     f: Rc<RefCell<Function<'s>>>,
-    i: usize,
+    func_idx: usize,
   ) -> Result<(), Vec<AnalyzerError<'s>>> {
     if self.funcs.contains_key(f.borrow().get_name()) {
       let earlier = self.funcs[f.borrow().get_name()];
@@ -61,29 +41,48 @@ impl<'s> Sema<'s> {
       return Err(vec![AnalyzerError::FunctionAlreadyDefined(
         FunctionAlreadyDefined::new(
           f.borrow().get_name(),
-          f.borrow().get_pos().clone(),
           earlier_func.borrow().get_pos().clone(),
+          f.borrow().get_pos().clone(),
         ),
       )]);
     }
-    self.funcs.insert(f.borrow().get_name(), i);
-
+    self.funcs.insert(f.borrow().get_name(), func_idx);
     self.resolver.enter_scope();
-    for arg in f.borrow().get_params() {
-      let namend = NamendValue::new(arg.get_val_type().clone(), arg.get_pos().clone());
-      self.resolver.define_var(arg.get_name(), namend);
+    for param in f.borrow().get_params() {
+      let nv = NamendValue::new(param.get_val_type().clone(), param.get_pos().clone());
+      self.resolver.define_var(param.get_name(), nv);
     }
 
-    let mut binding = f.borrow_mut();
-    let block = binding.get_body_mut();
-    let res = self.check_block(block, f.clone());
+    let body_ptr: *mut BlockExpression<'s> = {
+      let mut binding = f.borrow_mut();
+      binding.get_body_mut() as *mut _
+    };
+
+    let result = unsafe {
+      self.check_block(&mut *body_ptr, f.clone())
+    };
 
     self.resolver.exit_scope();
 
-    return match res {
-      Ok(_) => Ok(()),
-      Err(errs) => Err(errs),
-    };
+    result
+  }
+
+  pub fn check_block(
+    &mut self,
+    block: &mut BlockExpression<'s>,
+    f: Rc<RefCell<Function<'s>>>,
+  ) -> Result<(), Vec<AnalyzerError<'s>>> {
+    let mut errors = Vec::new();
+    for stmt in block.get_stmts_mut().iter_mut() {
+      if let Err(e) = check_stmt(self, stmt, f.clone()) {
+        errors.push(e);
+      }
+    }
+    if errors.is_empty() {
+      Ok(())
+    } else {
+      Err(errors)
+    }
   }
 
   pub fn analyze(&mut self) -> Result<(), &Vec<AnalyzerError<'s>>> {
