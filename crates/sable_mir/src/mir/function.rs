@@ -4,6 +4,10 @@ use super::instruction::{Instruction, MirInstId};
 
 pub mod block;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct MirFunctionId(pub usize);
+
+#[derive(Debug)]
 pub struct MirFunction<'ctx> {
   name: &'ctx str,
   instructions: Vec<Instruction>,
@@ -43,5 +47,17 @@ impl<'ctx> MirFunction<'ctx> {
       self.instructions.len()
     };
     &self.instructions[start..end]
+  }
+
+  pub fn get_last_blk(&self) -> Option<MirBlockId> {
+    if self.blocks.is_empty() {
+      None
+    } else {
+      Some(MirBlockId(self.blocks.len() - 1))
+    }
+  }
+
+  pub fn get_block(&self, id: MirBlockId) -> Option<&MirBlock<'ctx>> {
+    self.blocks.get(id.0)
   }
 }

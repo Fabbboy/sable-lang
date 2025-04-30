@@ -45,11 +45,12 @@ fn main() {
     }
   }
 
-  let mut mir_mod = MirModule::new("test");
-  let mut lowerer = Lowerer::new(&mut mir_mod, ast);
+  let mir_mod = MirModule::new("test");
+  let mut lowerer = Lowerer::new(mir_mod, ast);
   let res = lowerer.lower();
+
   match res {
-    Ok(_) => println!("Lowering successful."),
+    Ok(mir_mod) => println!("{:#?}", mir_mod),
     Err(errors) => for error in errors {},
   }
 }
