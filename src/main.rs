@@ -1,5 +1,4 @@
 use ariadne::Source;
-use sable_mir::lowering::Lowering;
 use sable_parser::{lexer::lexer::Lexer, parser::parser::Parser};
 use sable_sema::sema::Sema;
 
@@ -41,20 +40,6 @@ fn main() {
           .report(FILENAME)
           .print((FILENAME, Source::from(SOURCE)))
           .unwrap();
-      }
-    }
-  }
-
-  let mut lowerer = Lowering::new("test", ast);
-  match lowerer.lower() {
-    Ok(mir_mod) => {
-      println!("Lowered MIR: {:#?}", mir_mod);
-    }
-    Err(errors) => {
-      for error in errors {
-        let error = error.report();
-        let fmt = error.pretty(80);
-        println!("Error: {fmt}");
       }
     }
   }
